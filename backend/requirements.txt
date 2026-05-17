@@ -1,0 +1,21 @@
+# Web
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.9
+
+# Config & validation
+pydantic-settings>=2.6.0
+
+# Persistence — PostgreSQL（后续 RAG / pgvector）
+sqlalchemy>=2.0.36
+alembic>=1.14.0
+psycopg[binary]>=3.2.0
+
+# Auth
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+
+# M5 AI — Ollama + LangChain（可选 LLM 抽槽位）
+httpx>=0.27.0
+langchain-core>=0.3.0
+langchain-ollama>=0.2.0

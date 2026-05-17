@@ -1,0 +1,22 @@
+# 本地开发：PostgreSQL + pgvector（便于后续商品/评价向量检索与 RAG）
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: secondhand-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: secondhand
+      POSTGRES_PASSWORD: secondhand
+      POSTGRES_DB: secondhand
+    ports:
+      - "5432:5432"
+    volumes:
+      - secondhand_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secondhand -d secondhand"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  secondhand_pgdata:
