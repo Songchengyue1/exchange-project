@@ -12,14 +12,24 @@ import { useAuthStore } from '../stores/auth'
 import type { UserAddress, UserAddressInput } from '../types/address'
 import AmapAddressPicker from './AmapAddressPicker.vue'
 
-const props = defineProps<{
-  modelValue: number | null
-  requireAddress?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue?: number | null
+    requireAddress?: boolean
+    /** select：下单时单选；manage：个人中心仅管理 */
+    mode?: 'select' | 'manage'
+  }>(),
+  {
+    modelValue: null,
+    mode: 'select',
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [number | null]
 }>()
+
+const isManage = computed(() => props.mode === 'manage')
 
 const auth = useAuthStore()
 const addresses = ref<UserAddress[]>([])
@@ -52,7 +62,7 @@ async function load() {
   error.value = ''
   try {
     addresses.value = await listAddresses()
-    if (!props.modelValue) {
+    if (!isManage.value && !props.modelValue) {
       const def = addresses.value.find((a) => a.is_default) ?? addresses.value[0]
       if (def) emit('update:modelValue', def.id)
     }
@@ -68,7 +78,7 @@ onMounted(load)
 watch(
   () => props.modelValue,
   (id) => {
-    if (id) localStorage.setItem('checkout_address_id', String(id))
+    if (!isManage.value && id) localStorage.setItem('checkout_address_id', String(id))
   },
 )
 
@@ -119,7 +129,7 @@ async function saveAddress() {
       saved = await createAddress(form.value)
     }
     await load()
-    emit('update:modelValue', saved.id)
+    if (!isManage.value) emit('update:modelValue', saved.id)
     dialogOpen.value = false
   } catch (e) {
     error.value = e instanceof Error ? e.message : '保存失败'
@@ -138,7 +148,7 @@ async function remove(addr: UserAddress) {
   if (!ok) return
   try {
     await deleteAddress(addr.id)
-    if (props.modelValue === addr.id) emit('update:modelValue', null)
+    if (!isManage.value && props.modelValue === addr.id) emit('update:modelValue', null)
     await load()
   } catch (e) {
     error.value = e instanceof Error ? e.message : '删除失败'
@@ -149,7 +159,7 @@ async function makeDefault(addr: UserAddress) {
   try {
     await setDefaultAddress(addr.id)
     await load()
-    emit('update:modelValue', addr.id)
+    if (!isManage.value) emit('update:modelValue', addr.id)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '操作失败'
   }
@@ -157,7 +167,7 @@ async function makeDefault(addr: UserAddress) {
 
 defineExpose({
   validate: () => {
-    if (!props.requireAddress) return true
+    if (isManage.value || !props.requireAddress) return true
     if (props.modelValue && selected.value) return true
     error.value = '请选择收货地址'
     return false
@@ -181,8 +191,16 @@ defineExpose({
 
     <ul v-else class="addr__list">
       <li v-for="a in addresses" :key="a.id">
-        <label class="addr__card" :class="{ 'addr__card--on': modelValue === a.id }">
+        <component
+          :is="isManage ? 'div' : 'label'"
+          class="addr__card"
+          :class="{
+            'addr__card--on': !isManage && modelValue === a.id,
+            'addr__card--default': isManage && a.is_default,
+          }"
+        >
           <input
+            v-if="!isManage"
             type="radio"
             name="checkout-address"
             class="addr__radio"
@@ -204,7 +222,7 @@ defineExpose({
               <button type="button" class="link-btn danger" @click.prevent="remove(a)">删除</button>
             </div>
           </div>
-        </label>
+        </component>
       </li>
     </ul>
 
@@ -284,10 +302,15 @@ defineExpose({
     background-color var(--duration-fast) ease;
 }
 
-.addr__card--on {
+.addr__card--on,
+.addr__card--default {
   border-color: var(--color-on-dark);
   background: var(--color-surface-card);
   box-shadow: 0 0 0 1px var(--color-on-dark);
+}
+
+.addr__card--default {
+  cursor: default;
 }
 
 .addr__radio {

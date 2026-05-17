@@ -18,6 +18,7 @@ from app.schemas.ai import (
     AIConversationDetail,
     AIConversationOut,
     AIMessageOut,
+    AIProductRef,
     AISearchIn,
     AISearchOut,
     AIRecommendOut,
@@ -34,6 +35,8 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 def _message_to_out(msg) -> AIMessageOut:
     product_ids: list[int] = []
+    product_refs: list[AIProductRef] = []
+    products_kind: str | None = None
     if msg.meta_json:
         try:
             meta = json.loads(msg.meta_json)
@@ -45,14 +48,32 @@ def _message_to_out(msg) -> AIMessageOut:
                         product_ids.append(int(x))
                     except (TypeError, ValueError):
                         continue
+            refs = meta.get("product_refs")
+            if isinstance(refs, list):
+                for item in refs:
+                    if not isinstance(item, dict):
+                        continue
+                    try:
+                        pid = int(item.get("id"))
+                        title = str(item.get("title") or f"商品 #{pid}")
+                        product_refs.append(AIProductRef(id=pid, title=title))
+                    except (TypeError, ValueError):
+                        continue
+            kind = meta.get("products_kind")
+            if kind in ("target", "recommend"):
+                products_kind = kind
         except (json.JSONDecodeError, TypeError, ValueError):
             pass
+    if not product_refs and product_ids:
+        product_refs = [AIProductRef(id=pid, title=f"商品 #{pid}") for pid in product_ids]
     return AIMessageOut(
         id=msg.id,
         role=msg.role,
         content=msg.content,
         created_at=msg.created_at,
         product_ids=product_ids,
+        product_refs=product_refs,
+        products_kind=products_kind,
     )
 
 

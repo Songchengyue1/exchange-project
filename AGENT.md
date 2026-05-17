@@ -54,6 +54,49 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 ## 最新会话
 
+### 2026-05-17 — 修复有商品仍答「暂无匹配」
+
+- **现象**：检索到 iPhone 且链接正确，正文仍显示暂无匹配。
+- **原因**：小模型忽略 system 商品列表；非检索失败。
+- **结论**：强化 prompt；`_finalize_assistant_reply` 有商品时替换误报；done 事件带 `content` 覆盖前端流式文本。
+- **涉及文件**：`chat_service.py`、`AiChatDrawer.vue`、`types/ai.ts`。
+
+### 2026-05-17 — AI 对话商品链接标签
+
+- **用户诉求**：回复下方链接需标明「推荐商品」或「目标商品」。
+- **结论**：后端返回 `products_kind` + `product_refs`（含标题）；前端分区标题 + 商品名链接。具体问法为 target，泛浏览为 recommend。
+- **涉及文件**：`chat_service.py`、`query_terms.py`、`routers/ai.py`、`schemas/ai.py`、`AiChatDrawer.vue`、`types/ai.ts`。
+
+### 2026-05-17 — AI 对话 iPhone/苹果手机检索
+
+- **用户诉求**：问「苹果手机」能答，问「iPhone」却暂无匹配。
+- **原因**：整句当关键词检索失败；旧逻辑用「手机」等泛词命中其它商品或随机兜底，模型看不到 iPhone。
+- **结论**：新增 `query_terms.py` 抽词+同义词（苹果手机↔iphone、ipone 等）；去掉泛意图外的随机兜底；system 提示苹果即 iPhone。
+- **涉及文件**：`backend/app/services/ai/query_terms.py`、`chat_service.py`。
+
+### 2026-05-17 — 个人中心收货地址
+
+- **用户诉求**：个人中心收货地址与下单时一致（多地址、高德选点、默认等）。
+- **结论**：`AddressSelector` 增加 `mode="manage"`；`ProfileView` 复用该组件，移除旧单行 textarea。
+- **涉及文件**：`AddressSelector.vue`、`ProfileView.vue`。
+
+### 2026-05-17 — 轮播加速
+
+- **用户诉求**：轮播切换再快一点。
+- **结论**：`HeroCarousel` 自动切换间隔由 5s 改为 3.5s。
+
+### 2026-05-17 — 首页轮播居中放大
+
+- **用户诉求**：轮播更靠中间、尺寸更大。
+- **结论**：Hero 栅格右列加宽、轮播 `justify-self: center` 最大 720px；轮播 16:10、最高约 520px。
+- **涉及文件**：`HomeView.vue`、`HeroCarousel.vue`。
+
+### 2026-05-17 — 首页 Hero 轮播
+
+- **用户诉求**：首页顶部右侧增加轮播。
+- **结论**：Hero 区改为左右双栏；右侧 `HeroCarousel` 展示热门/最新商品图（可点击进详情），不足时用发布/浏览推广页；5 秒自动切换、圆点与左右箭头、底部 M 色条。
+- **涉及文件**：`frontend/src/components/HeroCarousel.vue`、`frontend/src/views/HomeView.vue`。
+
 ### 2026-05-17 — 稍后支付 + 30 分钟付款倒计时
 
 - **用户诉求**：模拟支付页增加「稍后支付」；订单页 30 分钟倒计时，超时自动取消。

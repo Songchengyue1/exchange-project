@@ -10,7 +10,7 @@ import {
   useAiChat,
 } from '../composables/useAiChat'
 import { useAuthStore } from '../stores/auth'
-import type { AIConversation, AIMessage, ChatStreamDone } from '../types/ai'
+import type { AIConversation, AIMessage, AIProductRef, AIProductsKind, ChatStreamDone } from '../types/ai'
 
 type ChatMsg = {
   id: string
@@ -19,6 +19,8 @@ type ChatMsg = {
   streaming?: boolean
   thinking?: boolean
   productIds?: number[]
+  productRefs?: AIProductRef[]
+  productsKind?: AIProductsKind
 }
 
 const { open, hide } = useAiChat()
@@ -71,13 +73,32 @@ function formatHistoryTime(iso: string) {
   })
 }
 
+function productLinksFromMessage(m: Pick<AIMessage, 'product_ids' | 'product_refs' | 'products_kind'>) {
+  const refs =
+    m.product_refs?.length
+      ? m.product_refs
+      : m.product_ids?.map((id) => ({ id, title: `商品 #${id}` }))
+  if (!refs?.length) return { productRefs: undefined, productsKind: undefined as AIProductsKind | undefined }
+  return {
+    productRefs: refs,
+    productsKind: m.products_kind ?? 'recommend',
+  }
+}
+
+function linksSectionLabel(kind?: AIProductsKind) {
+  return kind === 'target' ? '目标商品' : '推荐商品'
+}
+
 function mapApiMessage(m: AIMessage): ChatMsg {
   const role = m.role === 'user' ? 'user' : 'assistant'
+  const links = productLinksFromMessage(m)
   return {
     id: `db-${m.id}`,
     role,
     content: m.content,
     productIds: m.product_ids?.length ? m.product_ids : undefined,
+    productRefs: links.productRefs,
+    productsKind: links.productsKind,
   }
 }
 
@@ -234,7 +255,17 @@ async function send() {
           if (m) {
             m.streaming = false
             m.thinking = false
+            const links = productLinksFromMessage({
+              product_ids: data.product_ids ?? [],
+              product_refs: data.product_refs,
+              products_kind: data.products_kind,
+            })
             m.productIds = data.product_ids ?? []
+            m.productRefs = links.productRefs
+            m.productsKind = links.productsKind
+            if (typeof data.content === 'string' && data.content.trim()) {
+              m.content = data.content
+            }
           }
           void loadConversationList()
           scrollBottom()
@@ -352,15 +383,18 @@ function convTitle(c: AIConversation) {
                   <p v-else class="bubble__text">
                     {{ m.content }}<span v-if="showCursor(m)" class="cursor">▍</span>
                   </p>
-                  <div v-if="m.productIds?.length && !isThinking(m)" class="bubble__links">
+                  <div v-if="m.productRefs?.length && !isThinking(m)" class="bubble__links">
+                    <p class="bubble__links-label ds-label-caps">
+                      {{ linksSectionLabel(m.productsKind) }}
+                    </p>
                     <RouterLink
-                      v-for="pid in m.productIds"
-                      :key="pid"
+                      v-for="ref in m.productRefs"
+                      :key="ref.id"
                       class="bubble__link"
-                      :to="`/products/${pid}`"
+                      :to="`/products/${ref.id}`"
                       @click="close"
                     >
-                      查看商品 #{{ pid }}
+                      {{ ref.title }}
                     </RouterLink>
                   </div>
                 </div>
@@ -742,6 +776,13 @@ function convTitle(c: AIConversation) {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+.bubble__links-label {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
 }
 
 .bubble__link {

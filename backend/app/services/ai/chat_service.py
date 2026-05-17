@@ -14,16 +14,20 @@ from app.repositories.ai import AIConversationRepository
 from app.repositories.product import ProductRepository
 from app.services.ai.embedding_index import EmbeddingIndexService
 from app.services.ai.ollama_client import OllamaClient, OllamaError
+from app.services.ai.query_terms import expand_search_terms, is_browse_all_intent, product_links_kind
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
-    "你是酱菜交易平台 AI 助手。仅根据「相关商品」列表用简短中文回答，可列商品名与价格。"
-    "列表为空则说明暂无匹配。不要编造商品，勿长篇科普站外平台。"
+    "你是酱菜交易平台 AI 助手。只能依据下方「相关商品」列表作答，用一两句中文说明是否有货、名称与价格。"
+    "列表中有「- 商品名」条目时，表示有匹配商品，必须按列表回答，禁止说「暂无匹配」。"
+    "仅当列表仅为「（暂无）」时，才可以说暂无匹配。"
+    "不要编造列表外的商品；用户说苹果手机时，列表中的 iPhone 即视为匹配。"
 )
 
+_NO_MATCH_HINTS = ("暂无匹配", "暂无相关", "没有匹配", "未找到", "找不到", "无相关商品", "无匹配")
+
 _HISTORY_TRIM = 280
-_KEYWORD_HINTS = ("mac", "iphone", "电脑", "手机", "书", "桌", "鞋", "switch", "宜家")
 
 
 class AIChatService:
@@ -35,18 +39,24 @@ class AIChatService:
 
     def _keyword_retrieve(self, query: str, top_k: int) -> list[int]:
         repo = ProductRepository(self.db)
-        q = query.strip()
-        rows, _ = repo.list_marketplace(page=1, page_size=top_k, q=q or None)
-        if not rows and q:
-            low = q.lower()
-            for token in _KEYWORD_HINTS:
-                if token in low:
-                    rows, _ = repo.list_marketplace(page=1, page_size=top_k, q=token)
-                    if rows:
-                        break
-        if not rows:
+        terms = expand_search_terms(query)
+        ids: list[int] = []
+        seen: set[int] = set()
+
+        for term in terms:
+            rows, _ = repo.list_marketplace(page=1, page_size=top_k, q=term)
+            for p in rows:
+                if p.id not in seen:
+                    seen.add(p.id)
+                    ids.append(p.id)
+            if len(ids) >= top_k:
+                break
+
+        if not ids and is_browse_all_intent(query):
             rows, _ = repo.list_marketplace(page=1, page_size=top_k)
-        return [p.id for p in rows]
+            ids = [p.id for p in rows]
+
+        return ids[:top_k]
 
     def _vector_retrieve(self, query: str, top_k: int) -> list[int]:
         qvec = self.embeddings.embed_query(query)
@@ -75,6 +85,18 @@ class AIChatService:
         by_id = {p.id: p for p in self.db.scalars(stmt).all()}
         return [by_id[i] for i in ids if i in by_id]
 
+    def _products_payload(self, products: list[Product], query: str) -> dict:
+        kind = product_links_kind(query)
+        refs = [{"id": p.id, "title": p.title} for p in products]
+        return {
+            "product_ids": [p.id for p in products],
+            "product_refs": refs,
+            "products_kind": kind,
+        }
+
+    def _products_meta_json(self, products: list[Product], query: str) -> str:
+        return json.dumps(self._products_payload(products, query), ensure_ascii=False)
+
     def _format_product_context(self, products: list[Product]) -> str:
         if not products:
             return "（暂无）"
@@ -83,6 +105,33 @@ class AIChatService:
             cat = p.category.name if p.category else ""
             lines.append(f"- {p.title} ¥{float(p.price):.0f} {cat}")
         return "\n".join(lines)
+
+    def _looks_like_false_no_match(self, text: str) -> bool:
+        t = text.strip().replace(" ", "")
+        if not t:
+            return True
+        if len(t) > 120:
+            return False
+        return any(h in t for h in _NO_MATCH_HINTS)
+
+    def _template_reply_from_products(self, products: list[Product]) -> str:
+        if len(products) == 1:
+            p = products[0]
+            return f"有货。{p.title}，价格 ¥{float(p.price):.0f}。"
+        lines = ["有货，相关商品如下："]
+        for p in products[:4]:
+            lines.append(f"- {p.title} ¥{float(p.price):.0f}")
+        return "\n".join(lines)
+
+    def _finalize_assistant_reply(self, text: str, products: list[Product]) -> str:
+        cleaned = text.strip()
+        if not products:
+            if cleaned:
+                return cleaned
+            return "暂未找到相关商品，可到商品页浏览。"
+        if self._looks_like_false_no_match(cleaned):
+            return self._template_reply_from_products(products)
+        return cleaned
 
     def _build_messages(
         self,
@@ -151,8 +200,8 @@ class AIChatService:
             yield {"event": "error", "detail": str(exc)}
             return
 
-        product_ids = [p.id for p in products]
-        yield {"event": "meta", "status": "generating", "product_ids": product_ids}
+        payload = self._products_payload(products, text)
+        yield {"event": "meta", "status": "generating", **payload}
 
         if not settings.ai_enabled:
             fallback = "AI 功能已关闭。"
@@ -161,14 +210,14 @@ class AIChatService:
                 conv.id,
                 "assistant",
                 fallback,
-                json.dumps({"product_ids": product_ids}),
+                self._products_meta_json(products, text),
             )
             yield {"event": "chunk", "content": fallback}
             yield {
                 "event": "done",
                 "conversation_id": conv.id,
                 "assistant_message_id": assistant.id,
-                "product_ids": product_ids,
+                **payload,
             }
             return
 
@@ -190,20 +239,19 @@ class AIChatService:
                 conv.id,
                 "assistant",
                 fallback,
-                json.dumps({"product_ids": product_ids}),
+                self._products_meta_json(products, text),
             )
             yield {"event": "chunk", "content": fallback}
             yield {
                 "event": "done",
                 "conversation_id": conv.id,
                 "assistant_message_id": assistant.id,
-                "product_ids": product_ids,
+                **payload,
             }
             return
 
         full = "".join(full_parts).strip()
-        if not full and products:
-            full = "相关商品：\n" + self._format_product_context(products)
+        full = self._finalize_assistant_reply(full, products)
         if not full:
             full = "抱歉，请换个说法或到商品页浏览。"
 
@@ -212,11 +260,12 @@ class AIChatService:
             conv.id,
             "assistant",
             full,
-            json.dumps({"product_ids": product_ids}),
+            self._products_meta_json(products, text),
         )
         yield {
             "event": "done",
             "conversation_id": conv.id,
             "assistant_message_id": assistant.id,
-            "product_ids": product_ids,
+            "content": full,
+            **payload,
         }

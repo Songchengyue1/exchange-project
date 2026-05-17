@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import HeroCarousel, { type HeroSlide } from '../components/HeroCarousel.vue'
 import { getRecommendations } from '../api/ai'
 import { listCategories } from '../api/categories'
 import { listProducts } from '../api/products'
@@ -16,6 +17,54 @@ const loading = ref(true)
 function formatPrice(n: number) {
   return n.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
+
+const heroSlides = computed<HeroSlide[]>(() => {
+  const seen = new Set<number>()
+  const slides: HeroSlide[] = []
+
+  const pushProduct = (p: ProductListItem, tag?: string) => {
+    if (seen.has(p.id)) return
+    seen.add(p.id)
+    slides.push({
+      id: p.id,
+      title: p.title,
+      subtitle: `¥ ${formatPrice(p.price)} · ${CONDITION_LABELS[p.condition] ?? p.condition}`,
+      image: p.cover_image,
+      tag,
+      to: `/products/${p.id}`,
+    })
+  }
+
+  for (const p of hotItems.value) {
+    if (slides.length >= 4) break
+    pushProduct(p, 'Hot')
+  }
+  for (const p of latestItems.value) {
+    if (slides.length >= 5) break
+    if (p.cover_image) pushProduct(p, 'New')
+  }
+
+  if (slides.length < 2) {
+    slides.push(
+      {
+        id: 'promo-sell',
+        title: '发布你的闲置',
+        subtitle: '同城自提 / 邮寄，几分钟上架',
+        to: '/sell',
+        tag: 'Sell',
+      },
+      {
+        id: 'promo-browse',
+        title: '发现附近好物',
+        subtitle: '分类筛选 · 信誉热门',
+        to: '/products',
+        tag: 'Browse',
+      },
+    )
+  }
+
+  return slides.slice(0, 6)
+})
 
 onMounted(async () => {
   loading.value = true
@@ -37,14 +86,19 @@ onMounted(async () => {
 
 <template>
   <section class="hero-band">
-    <p class="hero-band__eyebrow ds-label-caps">Local · C2C · Trusted</p>
-    <h1 class="hero-band__title">本地闲置<br />即刻成交</h1>
-    <p class="hero-band__lede">
-      分类、上架审核与商品列表已接入；热门标签基于卖家信誉分（≥4.5）自动展示。订单与支付将在 M3 继续完善。
-    </p>
-    <div class="hero-band__cta">
-      <RouterLink class="ds-btn" to="/products">浏览商品</RouterLink>
-      <RouterLink class="ds-text-link ds-label-caps" to="/sell">发布闲置 →</RouterLink>
+    <div class="hero-band__grid">
+      <div class="hero-band__copy">
+        <p class="hero-band__eyebrow ds-label-caps">Local · C2C · Trusted</p>
+        <h1 class="hero-band__title">本地闲置<br />即刻成交</h1>
+        <p class="hero-band__lede">
+          分类、上架审核与商品列表已接入；热门标签基于卖家信誉分（≥4.5）自动展示。
+        </p>
+        <div class="hero-band__cta">
+          <RouterLink class="ds-btn" to="/products">浏览商品</RouterLink>
+          <RouterLink class="ds-text-link ds-label-caps" to="/sell">发布闲置 →</RouterLink>
+        </div>
+      </div>
+      <HeroCarousel class="hero-band__carousel" :slides="heroSlides" />
     </div>
   </section>
 
@@ -139,6 +193,24 @@ onMounted(async () => {
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-xxl) var(--space-lg) var(--space-section);
+}
+
+.hero-band__grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(360px, 1.15fr);
+  gap: clamp(var(--space-lg), 5vw, 56px);
+  align-items: center;
+}
+
+.hero-band__copy {
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.hero-band__carousel {
+  justify-self: center;
+  width: min(100%, 720px);
+  margin-inline: auto;
 }
 
 .hero-band__eyebrow {
@@ -355,5 +427,22 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .hero-band__grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+
+  .hero-band__copy {
+    max-width: none;
+  }
+
+  .hero-band__carousel {
+    order: -1;
+    width: 100%;
+    max-width: none;
+  }
 }
 </style>

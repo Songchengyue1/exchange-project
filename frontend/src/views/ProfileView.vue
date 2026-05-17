@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import * as authApi from '../api/auth'
+import AddressSelector from '../components/AddressSelector.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import { showConfirm } from '../composables/useConfirm'
 import { useAuthStore } from '../stores/auth'
@@ -8,7 +9,6 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 const nickname = ref('')
 const phone = ref('')
-const address = ref('')
 const message = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -19,7 +19,6 @@ function syncFromUser() {
   if (!u) return
   nickname.value = u.nickname
   phone.value = u.phone ?? ''
-  address.value = u.address ?? ''
 }
 
 onMounted(() => {
@@ -36,7 +35,7 @@ watch(
 async function save() {
   const ok = await showConfirm({
     title: '保存资料',
-    message: '确定要保存昵称、手机与收货地址吗？',
+    message: '确定要保存昵称与手机号吗？',
     confirmText: '保存',
   })
   if (!ok) return
@@ -48,7 +47,6 @@ async function save() {
     await authApi.updateMe({
       nickname: nickname.value.trim(),
       phone: phone.value.trim(),
-      address: address.value.trim(),
     })
     await auth.refreshProfile()
     message.value = '已保存'
@@ -83,7 +81,7 @@ async function onAvatar(e: Event) {
   <section class="wrap">
     <p class="eyebrow ds-label-caps">Account</p>
     <h1 class="title">个人中心</h1>
-    <p class="lede">维护昵称、联系方式与收货地址；头像支持 JPG / PNG / WEBP，最大 2MB。</p>
+    <p class="lede">维护昵称、手机号与收货地址；头像支持 JPG / PNG / WEBP，最大 2MB。</p>
 
     <div class="avatar-row">
       <UserAvatar
@@ -109,18 +107,18 @@ async function onAvatar(e: Event) {
         <label class="ds-label" for="phone">手机</label>
         <input id="phone" v-model="phone" class="ds-input" maxlength="32" />
       </div>
-      <div class="ds-field">
-        <label class="ds-label" for="addr">收货地址</label>
-        <textarea id="addr" v-model="address" class="ds-textarea" maxlength="2000" />
-      </div>
       <button type="submit" class="ds-btn" :disabled="loading">{{ loading ? '保存中…' : '保存资料' }}</button>
     </form>
+
+    <section class="address-section">
+      <AddressSelector mode="manage" />
+    </section>
   </section>
 </template>
 
 <style scoped>
 .wrap {
-  max-width: 560px;
+  max-width: 640px;
   margin: 0 auto;
   padding: var(--space-section) var(--space-lg);
 }
@@ -162,6 +160,13 @@ async function onAvatar(e: Event) {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  margin-bottom: var(--space-xxl);
+  padding-bottom: var(--space-xxl);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.address-section {
+  margin-top: var(--space-md);
 }
 
 .msg {

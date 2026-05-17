@@ -17,10 +17,21 @@ export interface AIRecommendResult {
   mode: 'history_vector' | 'popular' | 'empty'
 }
 
+export type AIProductsKind = 'target' | 'recommend'
+
+export interface AIProductRef {
+  id: number
+  title: string
+}
+
 export interface ChatStreamDone {
   conversation_id: number
   assistant_message_id: number
   product_ids: number[]
+  product_refs?: AIProductRef[]
+  products_kind?: AIProductsKind
+  /** 校正后的最终正文（覆盖流式过程中错误的「暂无匹配」等） */
+  content?: string
 }
 
 export interface AIMessage {
@@ -29,6 +40,8 @@ export interface AIMessage {
   content: string
   created_at: string
   product_ids: number[]
+  product_refs?: AIProductRef[]
+  products_kind?: AIProductsKind
 }
 
 export interface AIConversation {

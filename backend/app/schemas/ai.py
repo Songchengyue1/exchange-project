@@ -38,12 +38,19 @@ class ChatIn(BaseModel):
     conversation_id: Optional[int] = None
 
 
+class AIProductRef(BaseModel):
+    id: int
+    title: str
+
+
 class AIMessageOut(BaseModel):
     id: int
     role: str
     content: str
     created_at: datetime
     product_ids: list[int] = Field(default_factory=list)
+    product_refs: list[AIProductRef] = Field(default_factory=list)
+    products_kind: Optional[Literal["target", "recommend"]] = None
 
     model_config = {"from_attributes": True}
 
