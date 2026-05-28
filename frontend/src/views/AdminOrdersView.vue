@@ -15,7 +15,8 @@ const rejectNote = ref<Record<number, string>>({})
 const tabs = [
   { value: '', label: '全部' },
   { value: 'refund_pending', label: '退款待审' },
-  { value: 'pending_fulfillment', label: '待履约' },
+  { value: 'pending_fulfillment', label: '待卖家履约' },
+  { value: 'pending_receipt', label: '待买家确认' },
   { value: 'pending_payment', label: '待付款' },
   { value: 'completed', label: '已完成' },
   { value: 'refunded', label: '已退款' },
@@ -61,7 +62,7 @@ async function approve(o: AdminOrderItem) {
 async function reject(o: AdminOrderItem) {
   const ok = await showConfirm({
     title: '驳回退款',
-    message: `订单 #${o.id} 将恢复为待履约，确定？`,
+    message: `订单 #${o.id} 将恢复到退款前状态，确定？`,
     confirmText: '驳回',
     variant: 'danger',
   })
@@ -109,13 +110,21 @@ function formatPrice(n: number) {
       <li v-for="o in items" :key="o.id" class="card">
         <div class="card__head">
           <RouterLink :to="`/products/${o.product_id}`" class="title">{{ o.product_title }}</RouterLink>
-          <span class="status">{{ ORDER_STATUS_LABELS[o.status] ?? o.status }}</span>
+          <div class="card__head-right">
+            <RouterLink class="mini-link ds-label-caps" :to="{ name: 'order-detail', params: { id: String(o.id) } }">
+              查看订单
+            </RouterLink>
+            <span class="status">{{ ORDER_STATUS_LABELS[o.status] ?? o.status }}</span>
+          </div>
         </div>
         <p class="meta">
           订单 #{{ o.id }} · ¥ {{ formatPrice(o.amount) }} · 买家 {{ o.buyer_nickname }} · 卖家
           {{ o.seller_nickname }}
         </p>
         <p v-if="o.refund_reason" class="reason">退款原因：{{ o.refund_reason }}</p>
+        <p v-if="o.refund_reject_reason" class="reason reason--muted">
+          退款驳回：{{ o.refund_reject_reason }}
+        </p>
         <div v-if="o.status === 'refund_pending'" class="actions">
           <button type="button" class="ds-btn" :disabled="busyId === o.id" @click="approve(o)">通过退款</button>
           <input v-model="rejectNote[o.id]" class="ds-input" placeholder="驳回备注（可选）" />
@@ -183,6 +192,32 @@ function formatPrice(n: number) {
   align-items: flex-start;
 }
 
+.card__head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.mini-link {
+  font-size: 11px;
+  color: var(--color-body);
+  text-decoration: none;
+  border: 1px solid var(--color-hairline);
+  padding: 4px 10px;
+  border-radius: 999px;
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.mini-link:hover {
+  color: var(--color-on-dark);
+  border-color: var(--color-on-dark);
+  background: var(--color-surface-elevated);
+}
+
 .title {
   font-weight: 700;
   color: var(--color-on-dark);
@@ -204,6 +239,10 @@ function formatPrice(n: number) {
 
 .reason {
   color: var(--color-m-red);
+}
+
+.reason--muted {
+  color: var(--color-body);
 }
 
 .actions {

@@ -18,10 +18,13 @@ export interface ProductListItem {
   condition: string
   trade_type: string
   stock: number
+  status: string
   category_id: number
   category_name: string
   cover_image: string | null
   is_hot: boolean
+  is_favorited: boolean
+  favorite_count: number
   seller: SellerBrief
   created_at: string
 }
@@ -46,6 +49,8 @@ export interface ProductDetail {
   category_name: string
   images: ProductImageOut[]
   is_hot: boolean
+  is_favorited: boolean
+  favorite_count: number
   seller: SellerBrief
   created_at: string
   updated_at: string
@@ -56,4 +61,15 @@ export interface ProductPage {
   total: number
   page: number
   page_size: number
+}
+
+export interface ProductFavoriteState {
+  product_id: number
+  is_favorited: boolean
+  favorite_count: number
+}
+
+export interface ProductFavoriteItem {
+  product: ProductListItem
+  created_at: string
 }

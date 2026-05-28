@@ -39,7 +39,9 @@ class Order(Base):
     )
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    fulfilled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     refund_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    refund_reject_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     shipping_address_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     buyer: Mapped["User"] = relationship("User", foreign_keys=[buyer_id])

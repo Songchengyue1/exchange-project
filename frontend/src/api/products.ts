@@ -1,4 +1,9 @@
-import type { ProductDetail, ProductPage } from '../types/product'
+import type {
+  ProductDetail,
+  ProductFavoriteItem,
+  ProductFavoriteState,
+  ProductPage,
+} from '../types/product'
 import { apiFetch } from './client'
 
 export async function listProducts(params: {
@@ -75,6 +80,27 @@ export async function uploadProductImages(id: number, files: File[]): Promise<Pr
   return apiFetch<ProductDetail>(`/api/v1/products/${id}/images`, {
     method: 'POST',
     body: fd,
+    auth: true,
+  })
+}
+
+export async function favoriteProduct(id: number): Promise<ProductFavoriteState> {
+  return apiFetch<ProductFavoriteState>(`/api/v1/products/${id}/favorite`, {
+    method: 'POST',
+    auth: true,
+  })
+}
+
+export async function unfavoriteProduct(id: number): Promise<ProductFavoriteState> {
+  return apiFetch<ProductFavoriteState>(`/api/v1/products/${id}/favorite`, {
+    method: 'DELETE',
+    auth: true,
+  })
+}
+
+export async function listFavoriteProducts(): Promise<ProductFavoriteItem[]> {
+  return apiFetch<ProductFavoriteItem[]>('/api/v1/products/favorites', {
+    method: 'GET',
     auth: true,
   })
 }

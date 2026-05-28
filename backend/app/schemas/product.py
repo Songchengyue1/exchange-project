@@ -54,10 +54,13 @@ class ProductListItem(BaseModel):
     condition: str
     trade_type: str
     stock: int
+    status: str
     category_id: int
     category_name: str
     cover_image: Optional[str] = None
     is_hot: bool
+    is_favorited: bool = False
+    favorite_count: int = 0
     seller: SellerBrief
     created_at: datetime
 
@@ -76,6 +79,8 @@ class ProductDetail(BaseModel):
     category_name: str
     images: list[ProductImageOut]
     is_hot: bool
+    is_favorited: bool = False
+    favorite_count: int = 0
     seller: SellerBrief
     created_at: datetime
     updated_at: datetime
@@ -90,3 +95,14 @@ class ProductPage(BaseModel):
 
 class RejectBody(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
+
+
+class ProductFavoriteState(BaseModel):
+    product_id: int
+    is_favorited: bool
+    favorite_count: int
+
+
+class ProductFavoriteItem(BaseModel):
+    product: ProductListItem
+    created_at: datetime

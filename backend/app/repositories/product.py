@@ -6,12 +6,14 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.product import Product
+from app.models.product_favorite import ProductFavorite
 from app.models.product_image import ProductImage
 
 _PRODUCT_LOAD = (
     selectinload(Product.images),
     selectinload(Product.seller),
     selectinload(Product.category),
+    selectinload(Product.favorites),
 )
 
 SORT_MAP = {
@@ -68,6 +70,16 @@ class ProductRepository:
             .limit(page_size)
         )
         return list(self.db.scalars(stmt).all()), total
+
+    def list_favorites(self, user_id: int) -> list[tuple[Product, object]]:
+        stmt = (
+            select(Product, ProductFavorite.created_at)
+            .join(ProductFavorite, ProductFavorite.product_id == Product.id)
+            .where(ProductFavorite.user_id == user_id)
+            .options(*_PRODUCT_LOAD)
+            .order_by(ProductFavorite.created_at.desc(), ProductFavorite.id.desc())
+        )
+        return [(row[0], row[1]) for row in self.db.execute(stmt).all()]
 
     def list_pending(self) -> list[Product]:
         stmt = (

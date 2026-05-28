@@ -26,8 +26,8 @@ const addressSelectorRef = ref<InstanceType<typeof AddressSelector> | null>(null
 const CHECKOUT_STEPS = [
   { n: 1, label: '提交订单' },
   { n: 2, label: '模拟支付' },
-  { n: 3, label: '待履约' },
-  { n: 4, label: '确认收货' },
+  { n: 3, label: '卖家履约' },
+  { n: 4, label: '买家确认' },
 ]
 
 function formatPrice(n: number) {
@@ -56,7 +56,7 @@ const fulfillmentTips = computed(() => {
   if (t === 'pickup') {
     return [
       '本单为自提：支付成功后请主动联系卖家，约定见面时间与地点。',
-      '当面验货无误后再离开；如有问题可在订单内申请退款（待履约状态）。',
+      '卖家确认交付后再确认收货；如有问题可在订单内申请退款。',
     ]
   }
   if (t === 'shipping') {
@@ -255,8 +255,8 @@ async function submit() {
 
           <ul class="guarantee">
             <li>提交后将进入<strong>模拟支付</strong>页，仅用于演示，非真实扣款。</li>
-            <li>支付成功后订单为「待履约」，请与卖家沟通发货或自提。</li>
-            <li>收到商品确认无误后再点「确认收货」；问题可申请退款由管理员审核。</li>
+            <li>支付成功后订单为「待卖家履约」，请等待卖家确认发货或交付。</li>
+            <li>卖家履约后再确认收货；问题可申请退款由管理员审核。</li>
           </ul>
         </form>
       </aside>

@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { approveProduct, rejectProduct } from '../api/admin'
 import { getRecommendations, recordBrowse } from '../api/ai'
-import { getProduct } from '../api/products'
+import { favoriteProduct, getProduct, unfavoriteProduct } from '../api/products'
 import { showConfirm } from '../composables/useConfirm'
 import { useAuthStore } from '../stores/auth'
 import type { ProductListItem } from '../types/product'
@@ -24,6 +24,14 @@ const activeIndex = ref(0)
 const rejectReason = ref('')
 const reviewBusy = ref(false)
 const reviewError = ref('')
+const favoriteBusy = ref(false)
+
+const canFavorite = computed(
+  () =>
+    product.value?.status === 'approved' &&
+    auth.user != null &&
+    product.value.seller.id !== auth.user.id,
+)
 
 const fromAdmin = computed(() => route.query.from === 'admin')
 const showAdminReview = computed(
@@ -112,6 +120,31 @@ async function adminReject() {
     reviewBusy.value = false
   }
 }
+
+async function toggleFavorite() {
+  if (!product.value) return
+  if (!auth.token) {
+    await router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  favoriteBusy.value = true
+  error.value = ''
+  try {
+    const state = product.value.is_favorited
+      ? await unfavoriteProduct(product.value.id)
+      : await favoriteProduct(product.value.id)
+    product.value = {
+      ...product.value,
+      is_favorited: state.is_favorited,
+      favorite_count: state.favorite_count,
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '收藏操作失败'
+  } finally {
+    favoriteBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -143,6 +176,16 @@ async function adminReject() {
         <p class="eyebrow ds-label-caps">Detail</p>
         <h1 class="title">{{ product.title }}</h1>
         <p class="price">¥ {{ formatPrice(product.price) }}</p>
+        <button
+          v-if="canFavorite"
+          type="button"
+          class="favorite-btn"
+          :class="{ 'favorite-btn--on': product.is_favorited }"
+          :disabled="favoriteBusy"
+          @click="toggleFavorite"
+        >
+          {{ product.is_favorited ? '已收藏' : '收藏' }} · {{ product.favorite_count }}
+        </button>
         <ul class="specs">
           <li><span class="k">分类</span>{{ product.category_name }}</li>
           <li><span class="k">成色</span>{{ CONDITION_LABELS[product.condition] ?? product.condition }}</li>
@@ -219,6 +262,10 @@ async function adminReject() {
           <ul class="related__list">
             <li v-for="p in related" :key="p.id">
               <RouterLink class="related__link" :to="`/products/${p.id}`">
+                <span class="related__thumb" aria-hidden="true">
+                  <img v-if="p.cover_image" :src="p.cover_image" :alt="p.title" />
+                  <span v-else class="related__ph" />
+                </span>
                 <span class="related__title">{{ p.title }}</span>
                 <span class="related__price">¥ {{ formatPrice(p.price) }}</span>
               </RouterLink>
@@ -249,7 +296,7 @@ async function adminReject() {
 
 @media (min-width: 960px) {
   .layout {
-    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 400px);
     align-items: start;
   }
 }
@@ -258,25 +305,35 @@ async function adminReject() {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  width: 100%;
 }
 
 .hero {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 300px;
+  max-height: min(62vh, 520px);
+  aspect-ratio: 4 / 3;
   border: 1px solid var(--color-hairline);
   background: var(--color-surface-soft);
-  aspect-ratio: 16 / 10;
 }
 
 .hero__img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  max-height: min(62vh, 520px);
+  object-fit: contain;
+  object-position: center;
 }
 
 .hero__ph {
   width: 100%;
   height: 100%;
+  min-height: 300px;
   background: linear-gradient(135deg, var(--color-surface-soft), var(--color-carbon-gray));
 }
 
@@ -341,6 +398,25 @@ async function adminReject() {
   font-size: 28px;
   font-weight: 700;
   color: var(--color-on-dark);
+}
+
+.favorite-btn {
+  margin: 0 0 var(--space-lg);
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--color-hairline);
+  background: transparent;
+  color: var(--color-body-strong);
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.favorite-btn:hover,
+.favorite-btn--on {
+  border-color: var(--color-on-dark);
+  color: var(--color-on-dark);
+  background: var(--color-surface-elevated);
 }
 
 .specs {
@@ -448,6 +524,30 @@ async function adminReject() {
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-on-dark);
   font-size: 14px;
+  align-items: center;
+}
+
+.related__thumb {
+  width: 56px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-soft);
+  overflow: hidden;
+}
+
+.related__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.related__ph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-surface-soft), var(--color-carbon-gray));
 }
 
 .related__link:hover {
@@ -457,6 +557,9 @@ async function adminReject() {
 .related__title {
   flex: 1;
   font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .related__price {

@@ -123,7 +123,7 @@ async function submit() {
   const ok = await showConfirm({
     title: isEdit ? '保存修改' : '发布商品',
     message: isEdit
-      ? '确定要保存对该商品的修改吗？若曾被驳回，将重新进入待审核。'
+      ? '确定要保存对该商品的修改吗？修改标题、价格、描述等核心信息将重新进入待审核；仅调整库存则保持当前上架状态。'
       : '确定要提交该商品吗？提交后将进入待审核，通过后方可在前台展示。',
     confirmText: isEdit ? '保存' : '提交',
   })
@@ -144,7 +144,7 @@ async function submit() {
     if (editId.value != null) {
       const p = await updateProduct(editId.value, body)
       pid = p.id
-      msg.value = '已保存修改'
+      msg.value = p.status === 'pending' ? '已保存修改，待审核' : '已保存修改'
     } else {
       const p = await createProduct(body)
       pid = p.id

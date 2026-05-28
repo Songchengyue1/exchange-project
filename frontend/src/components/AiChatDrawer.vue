@@ -316,7 +316,7 @@ function convTitle(c: AIConversation) {
         <header class="drawer__head">
           <div>
             <p class="drawer__eyebrow ds-label-caps">AI Assistant</p>
-            <h2 class="drawer__title">智能客服</h2>
+            <h2 class="drawer__title">酱菜智能客服</h2>
           </div>
           <div class="drawer__head-actions">
             <button type="button" class="drawer__icon-btn" title="历史记录" @click="showHistory = !showHistory">

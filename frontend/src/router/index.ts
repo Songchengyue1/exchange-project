@@ -11,6 +11,7 @@ import FeedbackView from '../views/FeedbackView.vue'
 import MyFeedbackView from '../views/MyFeedbackView.vue'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
+import MyFavoritesView from '../views/MyFavoritesView.vue'
 import MyProductsView from '../views/MyProductsView.vue'
 import OrderCheckoutView from '../views/OrderCheckoutView.vue'
 import OrderDetailView from '../views/OrderDetailView.vue'
@@ -54,6 +55,12 @@ const router = createRouter({
           path: 'my-products',
           name: 'my-products',
           component: MyProductsView,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'favorites',
+          name: 'favorites',
+          component: MyFavoritesView,
           meta: { requiresAuth: true },
         },
         {

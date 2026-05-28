@@ -36,6 +36,7 @@ class AdminOrderItem(BaseModel):
     status: str
     trade_type: str
     refund_reason: Optional[str] = None
+    refund_reject_reason: Optional[str] = None
     buyer_id: int
     buyer_nickname: str
     seller_id: int

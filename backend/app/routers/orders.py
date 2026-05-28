@@ -180,6 +180,31 @@ def mock_pay_order(
     return serialize_order_detail(loaded)
 
 
+@router.post("/{order_id}/fulfill", response_model=OrderDetail)
+def fulfill_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> OrderDetail:
+    orders = OrderRepository(db)
+    order = orders.get_by_id(order_id)
+    if order is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+    if order.seller_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅卖家可确认履约")
+    if order.status != "pending_fulfillment":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前状态不可履约")
+
+    now = datetime.now(timezone.utc)
+    order.status = "pending_receipt"
+    order.fulfilled_at = now
+    order.updated_at = now
+    orders.save(order)
+    loaded = orders.get_detail(order_id)
+    assert loaded is not None
+    return serialize_order_detail(loaded)
+
+
 @router.post("/{order_id}/confirm-receipt", response_model=OrderDetail)
 def confirm_receipt(
     order_id: int,
@@ -192,7 +217,7 @@ def confirm_receipt(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
     if order.buyer_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅买家可确认收货")
-    if order.status != "pending_fulfillment":
+    if order.status != "pending_receipt":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前状态不可确认收货")
 
     order.status = "completed"
@@ -265,11 +290,12 @@ def request_refund(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
     if order.buyer_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅买家可申请退款")
-    if order.status != "pending_fulfillment":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="仅待履约订单可申请退款")
+    if order.status not in ("pending_fulfillment", "pending_receipt"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="仅待卖家履约或待买家确认订单可申请退款")
 
     order.status = "refund_pending"
     order.refund_reason = payload.reason.strip()
+    order.refund_reject_reason = None
     order.updated_at = datetime.now(timezone.utc)
     orders.save(order)
     loaded = orders.get_detail(order_id)

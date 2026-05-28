@@ -18,6 +18,7 @@ export interface AdminOrderItem {
   status: string
   trade_type: string
   refund_reason: string | null
+  refund_reject_reason: string | null
   buyer_id: number
   buyer_nickname: string
   seller_id: number

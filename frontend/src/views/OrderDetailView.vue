@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cancelOrder, confirmReceipt, getOrder, requestRefund } from '../api/orders'
+import { cancelOrder, confirmReceipt, fulfillOrder, getOrder, requestRefund } from '../api/orders'
 import OrderPaymentCountdown from '../components/OrderPaymentCountdown.vue'
 import ReviewModal from '../components/ReviewModal.vue'
 import { showConfirm } from '../composables/useConfirm'
@@ -24,6 +24,10 @@ const refundReason = ref('')
 const refundOpen = ref(false)
 
 const isBuyer = computed(() => order.value && auth.user && order.value.buyer.id === auth.user.id)
+const isSeller = computed(() => order.value && auth.user && order.value.seller.id === auth.user.id)
+const canRequestRefund = computed(
+  () => isBuyer.value && ['pending_fulfillment', 'pending_receipt'].includes(order.value?.status ?? ''),
+)
 
 function formatPrice(n: number) {
   return n.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
@@ -58,6 +62,29 @@ async function onConfirmReceipt() {
   error.value = ''
   try {
     order.value = await confirmReceipt(orderId.value)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '操作失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function onFulfill() {
+  if (!order.value) return
+  const ok = await showConfirm({
+    title: order.value.trade_type === 'shipping' ? '确认发货' : '确认履约',
+    message:
+      order.value.trade_type === 'shipping'
+        ? '确认已安排发货？确认后订单将等待买家确认收货。'
+        : '确认已完成线下交付或履约？确认后订单将等待买家确认。',
+    confirmText: order.value.trade_type === 'shipping' ? '确认发货' : '确认履约',
+  })
+  if (!ok) return
+
+  busy.value = true
+  error.value = ''
+  try {
+    order.value = await fulfillOrder(orderId.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '操作失败'
   } finally {
@@ -147,6 +174,9 @@ async function cancel() {
           </li>
           <li v-if="order.remark"><span class="k">备注</span>{{ order.remark }}</li>
           <li v-if="order.refund_reason"><span class="k">退款原因</span>{{ order.refund_reason }}</li>
+          <li v-if="order.refund_reject_reason">
+            <span class="k">退款驳回</span>{{ order.refund_reject_reason }}
+          </li>
           <li v-if="order.payment_ref"><span class="k">支付单号</span>{{ order.payment_ref }}</li>
         </ul>
       </div>
@@ -162,7 +192,16 @@ async function cancel() {
           去支付
         </RouterLink>
         <button
-          v-if="isBuyer && order.status === 'pending_fulfillment'"
+          v-if="isSeller && order.status === 'pending_fulfillment'"
+          type="button"
+          class="ds-btn"
+          :disabled="busy"
+          @click="onFulfill"
+        >
+          {{ order.trade_type === 'shipping' ? '确认发货' : '确认履约' }}
+        </button>
+        <button
+          v-if="isBuyer && order.status === 'pending_receipt'"
           type="button"
           class="ds-btn"
           :disabled="busy"
@@ -171,7 +210,7 @@ async function cancel() {
           确认收货
         </button>
         <button
-          v-if="isBuyer && order.status === 'pending_fulfillment' && !refundOpen"
+          v-if="canRequestRefund && !refundOpen"
           type="button"
           class="link-btn ds-label-caps"
           :disabled="busy"
@@ -179,7 +218,7 @@ async function cancel() {
         >
           申请退款
         </button>
-        <template v-if="isBuyer && order.status === 'pending_fulfillment' && refundOpen">
+        <template v-if="canRequestRefund && refundOpen">
           <input v-model="refundReason" class="ds-input refund-input" placeholder="退款原因（必填）" />
           <button type="button" class="ds-btn" :disabled="busy" @click="onRequestRefund">提交退款申请</button>
           <button type="button" class="link-btn ds-label-caps" :disabled="busy" @click="refundOpen = false">

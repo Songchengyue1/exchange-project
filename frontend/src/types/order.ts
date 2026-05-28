@@ -31,8 +31,10 @@ export interface OrderDetail {
   created_at: string
   updated_at: string
   paid_at: string | null
+  fulfilled_at: string | null
   completed_at: string | null
   refund_reason: string | null
+  refund_reject_reason: string | null
   buyer_has_reviewed: boolean
   review: ReviewPublic | null
   payment_expires_at: string | null

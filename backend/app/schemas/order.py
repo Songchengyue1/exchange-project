@@ -10,6 +10,7 @@ from app.schemas.review import ReviewPublic
 OrderStatus = Literal[
     "pending_payment",
     "pending_fulfillment",
+    "pending_receipt",
     "completed",
     "cancelled",
     "refund_pending",
@@ -65,8 +66,10 @@ class OrderDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     paid_at: Optional[datetime] = None
+    fulfilled_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     refund_reason: Optional[str] = None
+    refund_reject_reason: Optional[str] = None
     buyer_has_reviewed: bool = False
     review: Optional[ReviewPublic] = None
     payment_expires_at: Optional[datetime] = None

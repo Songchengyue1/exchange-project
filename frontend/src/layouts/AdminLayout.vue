@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { APP_ICON, APP_NAME } from '../constants/app'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 
 const nav = [
   { name: 'admin-products', label: '商品审核', to: '/admin/products' },
@@ -16,6 +18,12 @@ const nav = [
 const pageTitle = computed(() => {
   const item = nav.find((n) => n.name === route.name)
   return item?.label ?? '管理后台'
+})
+
+onMounted(async () => {
+  if (auth.token && !auth.user) {
+    await auth.hydrate()
+  }
 })
 </script>
 
@@ -42,7 +50,12 @@ const pageTitle = computed(() => {
 
     <div class="admin__main">
       <header class="admin__head">
-        <p class="admin__eyebrow ds-label-caps">Admin</p>
+        <div class="admin__head-row">
+          <p class="admin__eyebrow ds-label-caps">Admin</p>
+          <p v-if="auth.user" class="admin__who ds-label-caps">
+            {{ auth.user.nickname }}（{{ auth.user.username }}） · {{ auth.user.role }}
+          </p>
+        </div>
         <h1 class="admin__title">{{ pageTitle }}</h1>
       </header>
       <div class="admin__stripe ds-m-stripe" aria-hidden="true" />
@@ -139,9 +152,25 @@ const pageTitle = computed(() => {
   margin-bottom: var(--space-md);
 }
 
+.admin__head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
 .admin__eyebrow {
   margin: 0 0 var(--space-xs);
   color: var(--color-muted);
+}
+
+.admin__who {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52ch;
 }
 
 .admin__title {

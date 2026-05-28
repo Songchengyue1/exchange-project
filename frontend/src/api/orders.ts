@@ -43,6 +43,13 @@ export async function confirmReceipt(id: number): Promise<OrderDetail> {
   })
 }
 
+export async function fulfillOrder(id: number): Promise<OrderDetail> {
+  return apiFetch<OrderDetail>(`/api/v1/orders/${id}/fulfill`, {
+    method: 'POST',
+    auth: true,
+  })
+}
+
 export async function cancelOrder(id: number): Promise<OrderDetail> {
   return apiFetch<OrderDetail>(`/api/v1/orders/${id}/cancel`, {
     method: 'POST',

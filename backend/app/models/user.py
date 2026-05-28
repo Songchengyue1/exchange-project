@@ -11,6 +11,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.ai_conversation import AIConversation
     from app.models.product import Product
+    from app.models.product_favorite import ProductFavorite
     from app.models.user_address import UserAddress
 
 
@@ -33,6 +34,11 @@ class User(Base):
     )
 
     products: Mapped[list["Product"]] = relationship("Product", back_populates="seller")
+    favorites: Mapped[list["ProductFavorite"]] = relationship(
+        "ProductFavorite",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     ai_conversations: Mapped[list["AIConversation"]] = relationship(
         "AIConversation",
         back_populates="user",

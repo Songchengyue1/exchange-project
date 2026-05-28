@@ -37,15 +37,18 @@
 
 - [x] 分类 CRUD（管理员）+ 普通用户 `GET` 列表
 - [x] 商品：创建（待审核）、编辑、下架；多图；成色、交易方式、库存、价格
+- [x] 商品编辑重审：已上架 / 已驳回 / 已下架商品修改核心信息或补图后重新进入待审核
 - [x] 商品列表：分页、分类筛选、关键词搜索、状态过滤（前台仅已上架）
 - [x] 热门标签逻辑（卖家 `rating_avg` 非空且 ≥ 4.5 时 `is_hot`）
 - [x] 卖家信誉摘要（详情/列表嵌入 `seller.rating_avg`，评价聚合在 M4 再完善）
+- [x] 商品收藏：收藏 / 取消收藏接口、收藏数量与我的收藏列表
 
 **界面**
 
 - [x] 首页：热门 + 最新区块 + 分类入口
 - [x] 商品列表页（筛选、排序、分页）
 - [x] 商品详情页（轮播、参数、卖家信息、立即购买占位链到订单）
+- [x] 商品详情页收藏按钮；我的收藏页（`/favorites`）
 - [x] 发布商品页（表单 + 多图上传）
 - [x] 我的商品（卖家：待审核 / 已上架 / 已驳回 / 已下架，支持编辑与下架）
 - [x] 驳回原因展示（卖家可见）
@@ -59,7 +62,7 @@
 
 - [x] `POST /orders` 创建订单（待付款）、库存校验与扣减/锁定策略
 - [x] `POST /orders/{id}/mock-pay` 模拟支付成功/失败
-- [x] `POST /orders/{id}/confirm-receipt`、`POST /orders/{id}/cancel`（状态机校验）
+- [x] `POST /orders/{id}/fulfill` 卖家确认发货/交付；`POST /orders/{id}/confirm-receipt`、`POST /orders/{id}/cancel`（状态机校验）
 - [x] 买家订单列表、卖家相关订单视图（`GET /orders`、`GET /orders/sales`）
 - [x] 支付抽象：`MockPaymentProvider`，预留真实网关接口
 
@@ -67,8 +70,8 @@
 
 - [x] 下单确认页（备注、交易方式展示）
 - [x] 模拟支付页（成功/失败演示）
-- [x] 我的订单（买家/卖家切换 + 状态 Tab）
-- [x] 订单详情页
+- [x] 我的订单（买家/卖家切换 + 状态 Tab；卖家可确认履约）
+- [x] 订单详情页（卖家履约、买家确认收货、退款申请）
 
 ---
 
@@ -117,12 +120,12 @@
 - [x] 管理员鉴权（`get_current_admin`）；商品待审核列表、通过/驳回（原因必填）
 - [x] `GET/PATCH /admin/users`、`POST /admin/users/{id}/reset-password`；`admin_audit_logs` 审计
 - [x] 分类管理 CRUD（`/admin/categories`）
-- [x] `GET /admin/orders` 订单监管；`POST .../refund-approve|refund-reject`；买家 `POST /orders/{id}/request-refund`
+- [x] `GET /admin/orders` 订单监管；`POST .../refund-approve|refund-reject`；买家 `POST /orders/{id}/request-refund`；退款驳回原因回显
 
 **界面**
 
 - [x] `AdminLayout` 侧栏 + 内容区（`/admin/*`，仅 admin）
-- [x] 待审核商品、用户管理（含审计日志）、分类管理、订单/退款审核、反馈管理
+- [x] 待审核商品、用户管理（含审计日志）、分类管理、订单/退款审核（含驳回原因）、反馈管理
 
 ---
 

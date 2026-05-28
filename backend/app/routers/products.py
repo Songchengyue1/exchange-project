@@ -5,16 +5,25 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user, get_optional_user
 from app.models.product import Product
+from app.models.product_favorite import ProductFavorite
 from app.models.product_image import ProductImage
 from app.models.user import User
 from app.repositories import CategoryRepository, ProductRepository, SettingsRepository
 from app.repositories.product import SORT_MAP
-from app.schemas.product import ProductCreate, ProductDetail, ProductPage, ProductUpdate
+from app.schemas.product import (
+    ProductCreate,
+    ProductDetail,
+    ProductFavoriteItem,
+    ProductFavoriteState,
+    ProductPage,
+    ProductUpdate,
+)
 from app.services.product_serializers import (
     serialize_product_detail,
     serialize_product_list_item,
@@ -27,6 +36,11 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 EXT_BY_TYPE = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 MAX_IMAGE_BYTES = 2 * 1024 * 1024
 MAX_IMAGES_PER_PRODUCT = 6
+
+# 修改这些字段后需重新审核；仅改 stock 不打回 pending
+_REVIEW_TRIGGER_FIELDS = frozenset(
+    {"category_id", "title", "description", "price", "condition", "trade_type"}
+)
 
 
 def _assert_visible(product: Product, viewer: Optional[User]) -> None:
@@ -79,6 +93,36 @@ def list_marketplace_products(
     return ProductPage(items=items, total=total, page=page, page_size=page_size)
 
 
+def _favorite_count(db: Session, product_id: int) -> int:
+    return int(
+        db.scalar(select(func.count(ProductFavorite.id)).where(ProductFavorite.product_id == product_id)) or 0
+    )
+
+
+def _favorite_state(db: Session, product_id: int, is_favorited: bool) -> ProductFavoriteState:
+    return ProductFavoriteState(
+        product_id=product_id,
+        is_favorited=is_favorited,
+        favorite_count=_favorite_count(db, product_id),
+    )
+
+
+@router.get("/favorites", response_model=list[ProductFavoriteItem])
+def list_favorite_products(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[ProductFavoriteItem]:
+    hot = SettingsRepository(db).hot_rating_threshold()
+    rows = ProductRepository(db).list_favorites(user.id)
+    return [
+        ProductFavoriteItem(
+            product=serialize_product_list_item(p, hot_threshold=hot, viewer=user),
+            created_at=created_at,
+        )
+        for p, created_at in rows
+    ]
+
+
 @router.post("", response_model=ProductDetail, status_code=status.HTTP_201_CREATED)
 def create_product(
     payload: ProductCreate,
@@ -121,6 +165,48 @@ def get_product(
     return serialize_product_detail(product, viewer=viewer, hot_threshold=hot)
 
 
+@router.post("/{product_id}/favorite", response_model=ProductFavoriteState)
+def favorite_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ProductFavoriteState:
+    product = ProductRepository(db).get_by_id(product_id)
+    if product is None or product.status != "approved":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商品不存在")
+    if product.seller_id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能收藏自己的商品")
+
+    existing = db.scalar(
+        select(ProductFavorite).where(
+            ProductFavorite.user_id == user.id,
+            ProductFavorite.product_id == product_id,
+        )
+    )
+    if existing is None:
+        db.add(ProductFavorite(user_id=user.id, product_id=product_id))
+        db.commit()
+    return _favorite_state(db, product_id, True)
+
+
+@router.delete("/{product_id}/favorite", response_model=ProductFavoriteState)
+def unfavorite_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ProductFavoriteState:
+    fav = db.scalar(
+        select(ProductFavorite).where(
+            ProductFavorite.user_id == user.id,
+            ProductFavorite.product_id == product_id,
+        )
+    )
+    if fav is not None:
+        db.delete(fav)
+        db.commit()
+    return _favorite_state(db, product_id, False)
+
+
 @router.patch("/{product_id}", response_model=ProductDetail)
 def update_product(
     product_id: int,
@@ -149,7 +235,7 @@ def update_product(
     for k, v in data.items():
         setattr(product, k, v)
 
-    if product.status == "rejected":
+    if data.keys() & _REVIEW_TRIGGER_FIELDS and product.status in ("approved", "rejected", "offline"):
         product.status = "pending"
         product.reject_reason = None
 
@@ -227,6 +313,10 @@ async def upload_product_images(
             ProductImage(product_id=product.id, path=f"/static/{name}", sort_order=next_order)
         )
         next_order += 1
+
+    if product.status in ("approved", "rejected", "offline"):
+        product.status = "pending"
+        product.reject_reason = None
 
     touch_product_updated(product)
     products.commit()

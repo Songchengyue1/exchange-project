@@ -8,6 +8,7 @@ from app.models.feedback import Feedback
 from app.models.order import Order
 from app.models.product import Product
 from app.models.product_embedding import ProductEmbedding
+from app.models.product_favorite import ProductFavorite
 from app.models.product_image import ProductImage
 from app.models.review import Review
 from app.models.user import User
@@ -20,6 +21,7 @@ __all__ = [
     "Category",
     "Product",
     "ProductImage",
+    "ProductFavorite",
     "Order",
     "AppSetting",
     "Review",

@@ -8,35 +8,35 @@
 
 ### 登录入口
 
-| 项目 | 地址 |
-|------|------|
-| 前端 | http://127.0.0.1:5173/login 或 http://localhost:5173/login |
-| 后端 API 文档 | http://127.0.0.1:8000/docs |
-| 登录接口 | `POST /api/v1/auth/login`，body：`{"username":"…","password":"…"}` |
+| 项目          | 地址                                                               |
+| ------------- | ------------------------------------------------------------------ |
+| 前端          | http://127.0.0.1:5173/login 或 http://localhost:5173/login         |
+| 后端 API 文档 | http://127.0.0.1:8000/docs                                         |
+| 登录接口      | `POST /api/v1/auth/login`，body：`{"username":"…","password":"…"}` |
 
 ### 账号列表
 
-| 用户名 | 密码 | 角色 | 昵称 | 说明 |
-|--------|------|------|------|------|
-| `admin` | `admin123` | 管理员 | 管理员 | 顶栏「审核」、商品审核通过/驳回 |
-| `demo_seller1` | `demo123` | 卖家 | 阿杰 | 信誉 4.85；发布 iPhone、MacBook、宜家书桌等 |
-| `demo_seller2` | `demo123` | 卖家 | 小雨 | 信誉 4.2；发布球鞋、图书、Switch 卡带等 |
-| `demo_buyer` | `demo123` | 买家 | 买家小明 | 下单、支付、确认收货等买家流程 |
+| 用户名         | 密码       | 角色   | 昵称     | 说明                                        |
+| -------------- | ---------- | ------ | -------- | ------------------------------------------- |
+| `admin`        | `admin123` | 管理员 | 管理员   | 顶栏「审核」、商品审核通过/驳回             |
+| `demo_seller1` | `demo123`  | 卖家   | 阿杰     | 信誉 4.85；发布 iPhone、MacBook、宜家书桌等 |
+| `demo_seller2` | `demo123`  | 卖家   | 小雨     | 信誉 4.2；发布球鞋、图书、Switch 卡带等     |
+| `demo_buyer`   | `demo123`  | 买家   | 买家小明 | 下单、支付、确认收货等买家流程              |
 
 ### 演示数据概要
 
-- **分类**（5 个）：数码、服饰、图书、家居、其他  
-- **已上架商品**（6 件）：含封面图（`product_images` → `/static/demo_p*.png`）  
-- **待审核商品**（1 件）：索尼 WH-1000XM4 耳机（`demo_seller2`），供 `admin` 审核  
+- **分类**（5 个）：数码、服饰、图书、家居、其他
+- **已上架商品**（6 件）：含封面图（`product_images` → `/static/demo_p*.png`）
+- **待审核商品**（1 件）：索尼 WH-1000XM4 耳机（`demo_seller2`），供 `admin` 审核
 - **平台配置**：`app_settings.hot_rating_threshold = 4.5`
 
 ### 数据库（PostgreSQL）
 
-| 项 | 值 |
-|----|-----|
-| 库名 | `secondhand` |
+| 项           | 值                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| 库名         | `secondhand`                                                                                |
 | 本机示例连接 | `postgresql+psycopg://wepie@127.0.0.1:5432/secondhand`（见 `backend/.env`，用户因环境而异） |
-| TablePlus | Host `127.0.0.1`，Port `5432`，User 填本机 PG 用户，**Database 填 `secondhand`** |
+| TablePlus    | Host `127.0.0.1`，Port `5432`，User 填本机 PG 用户，**Database 填 `secondhand`**            |
 
 ### 重新写入演示账号与商品
 
@@ -53,6 +53,94 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 ---
 
 ## 最新会话
+
+### 2026-05-28 14:08 — 猜你喜欢展示商品图片
+
+- **用户诉求**：猜你喜欢部分需要能够看到商品图片。
+- **结论**：补齐商品详情页“猜你喜欢”列表的封面图展示（有 `cover_image` 显示图片，否则显示占位）；构建通过。
+- **涉及文件**：`frontend/src/views/ProductDetailView.vue`、`AGENT.md`。
+- **未完成 / 风险**：无。
+
+### 2026-05-28 14:05 — 管理后台订单详情入口与管理员信息展示
+
+- **用户诉求**：订单监管部分加入查看订单详情功能；管理后台需要能够看到当前管理员的信息。
+- **结论**：`AdminOrdersView` 增加“查看订单”入口，复用前台 `订单详情` 页面（后端已允许 admin 查看任意订单）；`AdminLayout` 头部展示当前管理员昵称/用户名/角色，并在进入管理后台时自动拉取当前用户信息。
+- **涉及文件**：`frontend/src/views/AdminOrdersView.vue`、`frontend/src/layouts/AdminLayout.vue`、`AGENT.md`。
+- **未完成 / 风险**：无。
+- **建议下一步**：如需在管理后台“原地弹窗”查看详情，可新增 `/api/v1/admin/orders/{id}` + Admin 专用详情弹窗组件（避免跳转到前台路由）。
+
+### 2026-05-28 14:03 — 临时关闭登录/注册页代码雨背景
+
+- **用户诉求**：暂时注释掉/去掉代码雨功能。
+- **结论**：移除 `AuthPageShell.vue` 对 `CodeRainCanvas` 的引用与渲染，改为静态渐变背景兜底；构建通过。
+- **涉及文件**：`frontend/src/components/AuthPageShell.vue`、`AGENT.md`。
+- **未完成 / 风险**：`CodeRainCanvas.vue` 文件仍保留但不再使用；后续如需恢复可重新挂载。
+- **建议下一步**：若希望“全站”彻底禁用代码雨（含未来其他入口），可再加一个全局 feature flag（例如环境变量控制）。
+
+### 2026-05-21 — 代码雨循环修复
+
+- **用户诉求**：代码雨只有第一次下落，之后不再动。
+- **结论**：修复 `drawFrame` 中触底重置后被 `row + DROP_SPEED` 覆盖的 bug；先累加再判定重置。
+
+### 2026-05-21 — 代码雨流速调慢
+
+- **用户诉求**：代码雨流动再慢一点。
+- **结论**：`CodeRainCanvas` 使用 `DROP_SPEED = 0.45`（浮点逐帧下落），拖尾淡出略减；列重置概率略降。
+
+### 2026-05-21 — 登录页 Canvas 代码雨背景
+
+- **用户诉求**：去掉光晕/网格类背景动效，改成代码雨（Canvas）。
+- **结论**：新增 `CodeRainCanvas.vue`（M 蓝字符下落、拖尾、暗角遮罩）；`AuthPageShell` 接入并移除 orb/grid/beam；表单样式保留；`prefers-reduced-motion` 时静态稀疏字符；标签页隐藏暂停动画。
+- **涉及文件**：`frontend/src/components/CodeRainCanvas.vue`、`AuthPageShell.vue`。
+
+### 2026-05-21 — 登录注册页视觉加强
+
+- **用户诉求**：背景看不出变化；输入框字体与表单样式难看（含浏览器自动填充蓝底）。
+- **结论**：`AuthPageShell` 加强背景（顶区渐变、网格、聚光、双侧光束、更强 M 色光晕）；表单卡片内边距与阴影；`auth-form` 专用输入/标签/按钮样式；`-webkit-autofill` 覆盖为深色底+白字。
+- **涉及文件**：`AuthPageShell.vue`、`LoginView.vue`、`RegisterView.vue`。
+
+### 2026-05-21 — 登录注册页动效
+
+- **用户诉求**：登录/注册页面增加动效，观感更好看。
+- **结论**：新增 `AuthPageShell.vue` 统一壳层：背景蓝/红光晕漂移、标题阶梯淡入、表单卡片 + M 色条展开、表单项错峰入场、输入聚焦微抬、按钮加载脉冲、错误提示抖动、底部链接下划线动效；`LoginView`/`RegisterView` 接入；尊重 `prefers-reduced-motion`。
+- **涉及文件**：`frontend/src/components/AuthPageShell.vue`、`frontend/src/views/LoginView.vue`、`RegisterView.vue`。
+- **验证**：`npm run build` 通过。
+
+### 2026-05-21 — 收藏与编辑重审体验优化
+
+- **用户诉求**：按评审建议改进收藏列表状态展示、收窄编辑重审触发字段、禁止收藏自己的商品，并启动项目。
+- **结论**：`ProductListItem` 增加 `status`；我的收藏对非可购商品展示状态角标与「暂不可购」提示；PATCH 仅 `category/title/description/price/condition/trade_type` 打回 `pending`，仅改 `stock` 保持上架；收藏 API 拒绝 `seller_id == user.id`；详情页收藏按钮对卖家隐藏；发布页文案与保存成功提示区分是否重审。
+- **涉及文件**：`backend/app/routers/products.py`、`schemas/product.py`、`services/product_serializers.py`；`frontend/src/types/product.ts`、`MyFavoritesView.vue`、`ProductDetailView.vue`、`SellView.vue`。
+- **验证**：`npm run build` 通过；后端 `http://127.0.0.1:8000/health`、前端 `http://127.0.0.1:5173/` 已启动。
+
+### 2026-05-21 — 补交易闭环与收藏功能
+
+- **用户诉求**：完善卖家履约、商品编辑重审、退款驳回原因、收藏功能，并同步 `AGENT.md` 与 TODO 文档。
+- **结论**：新增迁移 `h8i9j0k1l2m3`；订单支付后为「待卖家履约」，卖家确认发货/交付后进入「待买家确认」，买家再确认收货；退款驳回原因会回显给买家/管理员；商品编辑或补图会重新进入待审核；新增商品收藏/取消收藏、收藏数量、`/favorites` 我的收藏页。
+- **涉及文件**：后端 `orders.py`、`products.py`、`admin.py`、`ProductFavorite` 模型与迁移；前端 `Order*View.vue`、`ProductDetailView.vue`、`MyFavoritesView.vue`、路由/API/types；`docs/实现待办-TODO.md`。
+- **验证**：`npm run build` 通过；`PYTHONPYCACHEPREFIX=/private/tmp/codex_pycache backend/.venv/bin/python -m compileall backend/app -q` 通过；`alembic heads` 为 `h8i9j0k1l2m3`。
+
+### 2026-05-18 — 关闭所有服务
+
+- **用户诉求**：关闭所有服务。
+- **结论**：已结束 8000、5173 端口上的后端与前端进程。
+
+### 2026-05-18 — 商品详情图尺寸微调
+
+- **用户诉求**：主图又偏小。
+- **结论**：左栏加宽（约 1.15fr）、主图区 4:3 且 max-height 520px，仍用 contain 防竖图裁切。
+- **涉及文件**：`frontend/src/views/ProductDetailView.vue`。
+
+### 2026-05-18 — 商品详情图尺寸（初调）
+
+- **用户诉求**：详情页主图太大。
+- **结论**：曾限宽 440px；后已按上条放大。
+
+### 2026-05-18 — 启动项目
+
+- **用户诉求**：运行项目。
+- **结论**：后端 `127.0.0.1:8000` 已在运行（/health 200）；前端新实例 `http://127.0.0.1:5174/`（5173 已被占用）。
+- **建议下一步**：浏览器打开 http://127.0.0.1:5173/ 或 http://127.0.0.1:5174/ ；需重启后端时再停掉占用 8000 的进程。
 
 ### 2026-05-17 — 修复有商品仍答「暂无匹配」
 

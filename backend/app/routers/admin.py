@@ -230,6 +230,7 @@ def admin_list_orders(
             status=o.status,
             trade_type=o.trade_type,
             refund_reason=o.refund_reason,
+            refund_reject_reason=o.refund_reject_reason,
             buyer_id=o.buyer_id,
             buyer_nickname=o.buyer.nickname,
             seller_id=o.seller_id,
@@ -261,6 +262,7 @@ def admin_approve_refund(
         db.add(product)
 
     order.status = "refunded"
+    order.refund_reject_reason = None
     order.updated_at = datetime.now(timezone.utc)
     orders.save(order)
     log_admin_action(db, admin.id, "refund_approve", "order", order.id, order.refund_reason)
@@ -283,11 +285,11 @@ def admin_reject_refund(
     if order.status != "refund_pending":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="仅退款待审核订单可驳回")
 
-    order.status = "pending_fulfillment"
-    order.refund_reason = None
+    note = payload.note.strip() if payload.note else None
+    order.status = "pending_receipt" if order.fulfilled_at is not None else "pending_fulfillment"
+    order.refund_reject_reason = note or "管理员驳回退款申请"
     order.updated_at = datetime.now(timezone.utc)
     orders.save(order)
-    note = payload.note.strip() if payload.note else None
     log_admin_action(db, admin.id, "refund_reject", "order", order.id, note)
     loaded = orders.get_detail(order_id)
     assert loaded is not None

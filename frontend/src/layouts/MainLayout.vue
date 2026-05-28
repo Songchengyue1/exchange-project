@@ -72,6 +72,13 @@ watch(
           >
             我的商品
           </RouterLink>
+          <RouterLink
+            v-if="auth.isAuthenticated"
+            to="/favorites"
+            :class="{ active: route.name === 'favorites' }"
+          >
+            收藏
+          </RouterLink>
           <RouterLink to="/sell" :class="{ active: route.name === 'sell' }">发布</RouterLink>
           <RouterLink to="/orders" :class="{ active: route.name === 'orders' }">订单</RouterLink>
           <RouterLink

@@ -10,6 +10,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.category import Category
+    from app.models.product_favorite import ProductFavorite
     from app.models.product_image import ProductImage
     from app.models.user import User
 
@@ -44,5 +45,10 @@ class Product(Base):
         "ProductImage",
         back_populates="product",
         order_by="ProductImage.sort_order",
+        cascade="all, delete-orphan",
+    )
+    favorites: Mapped[list["ProductFavorite"]] = relationship(
+        "ProductFavorite",
+        back_populates="product",
         cascade="all, delete-orphan",
     )

@@ -2,7 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import OrderPaymentCountdown from '../components/OrderPaymentCountdown.vue'
-import { listBuyerOrders, listSellerOrders } from '../api/orders'
+import { fulfillOrder, listBuyerOrders, listSellerOrders } from '../api/orders'
+import { showConfirm } from '../composables/useConfirm'
 import type { OrderListItem } from '../types/order'
 import { ORDER_STATUS_LABELS } from '../constants/orderLabels'
 import { TRADE_LABELS } from '../constants/productLabels'
@@ -71,6 +72,22 @@ function formatPrice(n: number) {
 function payLink(id: number) {
   return { name: 'order-pay' as const, params: { id: String(id) } }
 }
+
+async function fulfillFromList(o: OrderListItem) {
+  const ok = await showConfirm({
+    title: o.trade_type === 'shipping' ? '确认发货' : '确认履约',
+    message: `确认订单 #${o.id} 已完成卖家履约？`,
+    confirmText: o.trade_type === 'shipping' ? '确认发货' : '确认履约',
+  })
+  if (!ok) return
+  error.value = ''
+  try {
+    await fulfillOrder(o.id)
+    await load()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '操作失败'
+  }
+}
 </script>
 
 <template>
@@ -107,7 +124,15 @@ function payLink(id: number) {
         :class="{ 'tab--on': tab === 'pending_fulfillment', 'ds-hover-tab--on': tab === 'pending_fulfillment' }"
         @click="tab = 'pending_fulfillment'"
       >
-        待履约
+        待卖家履约
+      </button>
+      <button
+        type="button"
+        class="tab ds-hover-tab"
+        :class="{ 'tab--on': tab === 'pending_receipt', 'ds-hover-tab--on': tab === 'pending_receipt' }"
+        @click="tab = 'pending_receipt'"
+      >
+        待买家确认
       </button>
       <button type="button" class="tab ds-hover-tab" :class="{ 'tab--on': tab === 'completed', 'ds-hover-tab--on': tab === 'completed' }" @click="tab = 'completed'">
         已完成
@@ -152,6 +177,14 @@ function payLink(id: number) {
         >
           去支付
         </RouterLink>
+        <button
+          v-if="role === 'sell' && o.status === 'pending_fulfillment'"
+          type="button"
+          class="row__pay ds-btn ds-btn--ghost"
+          @click="fulfillFromList(o)"
+        >
+          {{ o.trade_type === 'shipping' ? '确认发货' : '确认履约' }}
+        </button>
       </article>
       <p v-if="!items.length" class="muted">暂无订单</p>
     </div>

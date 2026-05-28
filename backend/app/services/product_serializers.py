@@ -35,7 +35,21 @@ def cover_image_path(product: "Product") -> Optional[str]:
     return images[0].path
 
 
-def serialize_product_list_item(product: "Product", hot_threshold: float = 4.5) -> ProductListItem:
+def favorite_count(product: "Product") -> int:
+    return len(product.favorites)
+
+
+def user_has_favorited(product: "Product", viewer: Optional["User"]) -> bool:
+    if viewer is None:
+        return False
+    return any(f.user_id == viewer.id for f in product.favorites)
+
+
+def serialize_product_list_item(
+    product: "Product",
+    hot_threshold: float = 4.5,
+    viewer: Optional["User"] = None,
+) -> ProductListItem:
     seller = serialize_seller(product.seller)
     return ProductListItem(
         id=product.id,
@@ -44,10 +58,13 @@ def serialize_product_list_item(product: "Product", hot_threshold: float = 4.5) 
         condition=product.condition,
         trade_type=product.trade_type,
         stock=product.stock,
+        status=product.status,
         category_id=product.category_id,
         category_name=product.category.name,
         cover_image=cover_image_path(product),
         is_hot=seller_is_hot(product.seller.rating_avg, hot_threshold),
+        is_favorited=user_has_favorited(product, viewer),
+        favorite_count=favorite_count(product),
         seller=seller,
         created_at=product.created_at,
     )
@@ -79,6 +96,8 @@ def serialize_product_detail(
         category_name=product.category.name,
         images=imgs,
         is_hot=seller_is_hot(product.seller.rating_avg, hot_threshold),
+        is_favorited=user_has_favorited(product, viewer),
+        favorite_count=favorite_count(product),
         seller=seller,
         created_at=product.created_at,
         updated_at=product.updated_at,
