@@ -198,7 +198,7 @@ watch(
   margin: 0;
   max-width: 60ch;
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -231,7 +231,7 @@ watch(
 
 .muted {
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .grid {
@@ -306,7 +306,7 @@ watch(
 .card__meta {
   margin: 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -332,7 +332,7 @@ watch(
 
 .pager__info {
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 </style>

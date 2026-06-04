@@ -37,7 +37,7 @@ defineProps<{
   margin: 0;
   max-width: 52ch;
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
   color: var(--color-body);
 }

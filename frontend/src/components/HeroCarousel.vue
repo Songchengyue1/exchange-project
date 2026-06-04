@@ -101,7 +101,9 @@ onUnmounted(stopTimer)
       aria-label="上一张"
       @click.prevent="prev"
     >
-      ‹
+      <svg class="carousel__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14.5 5L8 12l6.5 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </button>
     <button
       v-if="count > 1"
@@ -110,7 +112,9 @@ onUnmounted(stopTimer)
       aria-label="下一张"
       @click.prevent="next"
     >
-      ›
+      <svg class="carousel__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9.5 5L16 12l-6.5 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </button>
 
     <div v-if="count > 1" class="carousel__dots" role="tablist" aria-label="轮播切换">
@@ -222,7 +226,7 @@ onUnmounted(stopTimer)
   margin-bottom: var(--space-xs);
   padding: 2px 8px;
   font-size: 10px;
-  color: var(--color-on-dark);
+  color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(0, 0, 0, 0.35);
 }
@@ -232,14 +236,14 @@ onUnmounted(stopTimer)
   font-size: clamp(20px, 2.5vw, 26px);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--color-on-dark);
+  color: #ffffff;
 }
 
 .carousel__sub {
   margin: 0;
   font-size: 13px;
-  font-weight: 300;
-  color: var(--color-body-strong);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.4;
 }
 
@@ -264,16 +268,34 @@ onUnmounted(stopTimer)
   top: 50%;
   z-index: 4;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(0, 0, 0, 0.45);
-  color: var(--color-on-dark);
-  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--duration-fast) ease;
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+  transition:
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.carousel__nav-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .carousel:hover .carousel__nav {
@@ -281,8 +303,21 @@ onUnmounted(stopTimer)
 }
 
 .carousel__nav:hover {
-  background: rgba(0, 0, 0, 0.65);
-  border-color: var(--color-on-dark);
+  transform: translateY(-50%) scale(1.06);
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.carousel__nav:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.carousel__nav:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
 }
 
 .carousel__nav--prev {
@@ -315,7 +350,7 @@ onUnmounted(stopTimer)
 }
 
 .carousel__dot--on {
-  background: var(--color-on-dark);
+  background: #ffffff;
   transform: scale(1.15);
 }
 

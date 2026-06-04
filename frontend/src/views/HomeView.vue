@@ -232,7 +232,7 @@ onMounted(async () => {
   margin: 0 0 var(--space-xl);
   max-width: 52ch;
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
   color: var(--color-body);
 }
@@ -301,7 +301,7 @@ onMounted(async () => {
 .muted {
   margin: 0 0 var(--space-lg);
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .muted.small {
@@ -383,7 +383,7 @@ onMounted(async () => {
 .mini__m {
   margin: 0;
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 

@@ -120,7 +120,7 @@ async function reject(id: number) {
 .lede {
   margin: 0;
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -150,7 +150,7 @@ async function reject(id: number) {
   margin: var(--space-xs) 0 0;
   font-size: 14px;
   color: var(--color-body);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .card__desc {
@@ -158,7 +158,7 @@ async function reject(id: number) {
   font-size: 14px;
   line-height: 1.55;
   color: var(--color-body);
-  font-weight: 300;
+  font-weight: 400;
   white-space: pre-wrap;
 }
 

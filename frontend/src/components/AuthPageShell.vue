@@ -48,10 +48,10 @@ defineProps<{
   pointer-events: none;
   overflow: hidden;
   background:
-    radial-gradient(800px 420px at 24% 10%, rgba(28, 105, 212, 0.16), transparent 55%),
-    radial-gradient(700px 500px at 78% 18%, rgba(58, 240, 168, 0.06), transparent 60%),
-    radial-gradient(1200px 720px at 50% 90%, rgba(0, 0, 0, 0.45), transparent 60%),
-    linear-gradient(180deg, #06070a 0%, #07080c 40%, #040406 100%);
+    radial-gradient(800px 420px at 24% 10%, rgba(28, 105, 212, 0.08), transparent 55%),
+    radial-gradient(700px 500px at 78% 18%, rgba(28, 105, 212, 0.05), transparent 60%),
+    radial-gradient(1200px 720px at 50% 90%, rgba(0, 0, 0, 0.03), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #fafbfc 40%, #f5f6f8 100%);
 }
 
 .auth-page__inner {
@@ -81,7 +81,7 @@ defineProps<{
 .auth-page__lede {
   margin: 0 0 var(--space-xl);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
   animation-delay: 0.2s;
 }
@@ -95,9 +95,9 @@ defineProps<{
     color-mix(in srgb, var(--color-surface-card) 98%, transparent) 100%
   );
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 24px 64px rgba(0, 0, 0, 0.55),
-    0 0 80px rgba(28, 105, 212, 0.08);
+    0 0 0 1px rgba(0, 0, 0, 0.04) inset,
+    0 16px 48px rgba(0, 0, 0, 0.08),
+    0 0 80px rgba(28, 105, 212, 0.06);
   animation: auth-card-in 0.75s var(--ease-out) 0.18s both;
 }
 
@@ -164,7 +164,7 @@ defineProps<{
   background: var(--color-surface-soft);
   border: 1px solid var(--color-hairline-strong);
   border-radius: 2px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition:
     border-color var(--duration-fast) ease,
     box-shadow var(--duration-normal) var(--ease-out),
@@ -174,23 +174,23 @@ defineProps<{
 
 .auth-page__body :deep(.auth-form .ds-input::placeholder) {
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .auth-page__body :deep(.auth-form .ds-input:hover:not(:disabled):not(:focus)) {
   border-color: color-mix(in srgb, var(--color-body-strong) 70%, var(--color-hairline));
-  background: #111111;
+  background: var(--color-surface-elevated);
 }
 
 .auth-page__body :deep(.auth-form .ds-input:focus) {
   outline: none;
   transform: translateY(-1px);
   border-color: var(--color-m-blue-dark);
-  background: #0d0d0d;
+  background: #ffffff;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 0 0 1px var(--color-m-blue-dark),
-    0 12px 32px rgba(28, 105, 212, 0.18);
+    0 12px 32px rgba(28, 105, 212, 0.12);
 }
 
 /* 修复 Chrome 自动填充导致的蓝灰底 */
@@ -202,20 +202,20 @@ defineProps<{
   border: 1px solid var(--color-hairline-strong) !important;
   -webkit-box-shadow: 0 0 0 1000px var(--color-surface-soft) inset !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 0 0 1000px var(--color-surface-soft) inset !important;
   transition: background-color 99999s ease-out 0s;
 }
 
 .auth-page__body :deep(.auth-form .ds-input:-webkit-autofill:focus) {
   -webkit-box-shadow:
-    0 0 0 1000px #0d0d0d inset,
+    0 0 0 1000px #ffffff inset,
     0 0 0 1px var(--color-m-blue-dark) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 0 0 1000px #0d0d0d inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 1000px #ffffff inset,
     0 0 0 1px var(--color-m-blue-dark),
-    0 12px 32px rgba(28, 105, 212, 0.18) !important;
+    0 12px 32px rgba(28, 105, 212, 0.12) !important;
 }
 
 .auth-page__body :deep(.auth-form .ds-btn) {
@@ -236,7 +236,7 @@ defineProps<{
 
 .auth-page__body :deep(.auth-form .ds-btn:hover:not(:disabled)) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.1);
 }
 
 .auth-page__body :deep(.auth-form .ds-btn:active:not(:disabled)) {
@@ -253,7 +253,7 @@ defineProps<{
   font-size: 13px;
   font-weight: 400;
   line-height: 1.45;
-  color: #ffb4ae;
+  color: var(--color-m-red);
   background: color-mix(in srgb, var(--color-m-red) 12%, transparent);
   border-left: 3px solid var(--color-m-red);
 }
@@ -265,7 +265,7 @@ defineProps<{
 .auth-page__foot {
   margin: var(--space-xl) 0 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-muted);
   animation: auth-fade-up 0.6s var(--ease-out) 0.88s both;
 }

@@ -139,7 +139,7 @@ async function onAvatar(e: Event) {
 .lede {
   margin: 0 0 var(--space-xl);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
   color: var(--color-body);
 }
@@ -172,7 +172,7 @@ async function onAvatar(e: Event) {
 .msg {
   margin: 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-success);
 }
 </style>

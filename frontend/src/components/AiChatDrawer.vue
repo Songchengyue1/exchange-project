@@ -542,7 +542,7 @@ function convTitle(c: AIConversation) {
 .history__muted {
   margin: 0;
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-muted);
   line-height: 1.5;
 }
@@ -657,7 +657,7 @@ function convTitle(c: AIConversation) {
   margin: 0;
   padding: var(--space-md);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
   line-height: 1.55;
   border: 1px solid var(--color-hairline);

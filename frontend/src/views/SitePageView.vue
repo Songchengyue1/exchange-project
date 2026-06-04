@@ -59,7 +59,7 @@ const page = computed(() => {
 .lede {
   margin: 0 0 var(--space-md);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.6;
   color: var(--color-body);
 }
@@ -90,7 +90,7 @@ const page = computed(() => {
 .section__p {
   margin: 0 0 var(--space-md);
   font-size: 15px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.65;
   color: var(--color-body);
 }
@@ -99,7 +99,7 @@ const page = computed(() => {
   margin: 0;
   padding-left: 1.25rem;
   font-size: 15px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.65;
   color: var(--color-body);
 }

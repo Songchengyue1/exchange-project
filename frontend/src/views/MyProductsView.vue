@@ -126,7 +126,7 @@ async function offline(id: number) {
 .lede {
   margin: 0;
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -154,7 +154,7 @@ async function offline(id: number) {
 
 .muted {
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .list {
@@ -187,14 +187,14 @@ async function offline(id: number) {
   margin: var(--space-xs) 0 0;
   font-size: 14px;
   color: var(--color-body);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .row__reject {
   margin: var(--space-sm) 0 0;
   font-size: 14px;
   color: var(--color-m-red);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .row__actions {

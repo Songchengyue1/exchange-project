@@ -432,7 +432,7 @@ async function toggleFavorite() {
   padding: var(--space-sm) 0;
   border-bottom: 1px solid var(--color-hairline);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -445,7 +445,7 @@ async function toggleFavorite() {
 .reject {
   margin: 0 0 var(--space-lg);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-m-red);
 }
 
@@ -475,7 +475,7 @@ async function toggleFavorite() {
 .seller__rate {
   margin: 4px 0 0;
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -483,7 +483,7 @@ async function toggleFavorite() {
   margin: 0 0 var(--space-xl);
   white-space: pre-wrap;
   line-height: 1.6;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -571,7 +571,7 @@ async function toggleFavorite() {
   margin: 0;
   font-size: 14px;
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .admin-bar {

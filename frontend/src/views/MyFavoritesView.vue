@@ -144,7 +144,7 @@ async function removeFavorite(id: number) {
 .lede,
 .muted {
   color: var(--color-body);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .grid {
@@ -244,7 +244,7 @@ async function removeFavorite(id: number) {
 .card__meta {
   margin: 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 

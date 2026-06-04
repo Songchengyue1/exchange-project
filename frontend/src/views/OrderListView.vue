@@ -252,7 +252,7 @@ async function fulfillFromList(o: OrderListItem) {
 
 .muted {
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .list {
@@ -311,7 +311,7 @@ async function fulfillFromList(o: OrderListItem) {
 .row__meta {
   margin: 0 0 var(--space-xs);
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 

@@ -99,7 +99,7 @@ onUnmounted(() => {
 .confirm-panel__message {
   margin: 0 0 var(--space-xl);
   font-size: 15px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.55;
   color: var(--color-body);
 }

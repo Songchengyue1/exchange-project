@@ -1,29 +1,29 @@
 /**
- * 设计令牌来自 docs/DESIGN.md（BMW M 营销面风格）。
+ * 设计令牌来自 docs/DESIGN.md（BMW M 品牌色点缀 + 浅色商城底）。
  * 字体：Inter 作为 BMW Type Next 的开源替代（文档 Typography / Note on Font Substitutes）。
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
 :root {
-  /* Colors */
-  --color-primary: #ffffff;
-  --color-ink: #ffffff;
-  --color-body: #bbbbbb;
-  --color-body-strong: #e6e6e6;
-  --color-muted: #7e7e7e;
-  --color-hairline: #3c3c3c;
-  --color-hairline-strong: #262626;
-  --color-canvas: #000000;
-  --color-surface-card: #1a1a1a;
-  --color-surface-elevated: #262626;
-  --color-surface-soft: #0d0d0d;
-  --color-on-primary: #000000;
-  --color-on-dark: #ffffff;
+  /* Colors — 浅色商城底，保留 M 蓝/红点缀 */
+  --color-primary: #1c69d4;
+  --color-ink: #111111;
+  --color-body: #444444;
+  --color-body-strong: #222222;
+  --color-muted: #666666;
+  --color-hairline: #e8e8e8;
+  --color-hairline-strong: #d4d4d4;
+  --color-canvas: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #f8f8f9;
+  --color-surface-soft: #f3f3f5;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #111111;
   --color-m-blue-light: #0066b1;
   --color-m-blue-dark: #1c69d4;
   --color-m-red: #e22718;
-  --color-carbon-gray: #2b2b2b;
+  --color-carbon-gray: #e8e8ea;
   --color-warning: #f4b400;
   --color-success: #0fa336;
 
@@ -50,7 +50,7 @@
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
   --duration-fast: 0.18s;
   --duration-normal: 0.28s;
-  --shadow-hover: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 14px 40px rgba(0, 0, 0, 0.08);
 }
 
 *,
@@ -60,7 +60,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -70,7 +70,7 @@ body {
   color: var(--color-body);
   font-family: var(--font-body);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0;
   text-rendering: optimizeLegibility;
@@ -135,7 +135,7 @@ a:hover {
   background: var(--color-on-dark);
   color: var(--color-on-primary);
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
 }
 
 .ds-btn:disabled {
@@ -163,10 +163,10 @@ a:hover {
 
 .ds-label {
   font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--color-body-strong);
 }
 
 .ds-input,
@@ -180,12 +180,37 @@ a:hover {
   padding: 12px 16px;
   font-family: var(--font-body);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
 }
 
 .ds-input {
   height: 48px;
+}
+
+/* 下拉框：隐藏系统箭头，改用自定义位置（避免贴边） */
+select.ds-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px 18px;
+}
+
+select.ds-input:hover:not(:disabled):not(:focus) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select.ds-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231c69d4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select.ds-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .ds-textarea {
@@ -201,14 +226,14 @@ a:hover {
 .ds-input:focus,
 .ds-textarea:focus {
   outline: none;
-  border-color: var(--color-on-dark);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-color: var(--color-m-blue-dark);
+  box-shadow: 0 0 0 1px rgba(28, 105, 212, 0.2);
 }
 
 .ds-form-error {
   margin: 0 0 var(--space-md);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-m-red);
 }
 
@@ -338,7 +363,7 @@ a:hover {
 .ds-hover-row:hover {
   transform: translateX(4px);
   border-color: var(--color-body-strong);
-  box-shadow: -4px 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: -4px 8px 24px rgba(0, 0, 0, 0.06);
   background-color: var(--color-surface-elevated);
 }
 
@@ -369,7 +394,7 @@ a:hover {
 .ds-hover-tab:hover:not(.ds-hover-tab--on) {
   color: var(--color-body-strong);
   border-color: var(--color-body-strong);
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(0, 0, 0, 0.04);
   transform: translateY(-1px);
 }
 

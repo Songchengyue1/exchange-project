@@ -463,7 +463,7 @@ watch(
   flex-direction: column;
   gap: var(--space-sm);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
 }
 
@@ -486,7 +486,7 @@ watch(
 .site-footer__note {
   margin: 0;
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.5px;
   color: var(--color-muted);
   max-width: 48ch;

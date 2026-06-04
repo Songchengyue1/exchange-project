@@ -284,7 +284,7 @@ async function submit() {
 
 .muted {
   color: var(--color-muted);
-  font-weight: 300;
+  font-weight: 400;
   font-size: 14px;
 }
 
@@ -428,7 +428,7 @@ async function submit() {
   padding: 0;
   margin: 0 0 var(--space-sm);
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -467,7 +467,7 @@ async function submit() {
 .summary__desc {
   margin: var(--space-sm) 0 0;
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.5;
   color: var(--color-body);
   display: -webkit-box;
@@ -481,7 +481,7 @@ async function submit() {
   padding: 0;
   margin: 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -510,7 +510,7 @@ async function submit() {
   margin: 0;
   padding-left: 1.2rem;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.6;
   color: var(--color-body);
 }
@@ -569,7 +569,7 @@ async function submit() {
   gap: var(--space-md);
   padding: var(--space-sm) 0;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
   border-bottom: 1px solid var(--color-hairline);
 }
@@ -609,7 +609,7 @@ async function submit() {
   margin: 0;
   padding-left: 1.1rem;
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.55;
   color: var(--color-muted);
 }

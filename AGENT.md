@@ -54,6 +54,54 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 ## 最新会话
 
+### 2026-06-01 11:52 — 全站 font-weight 300 统一改为 400
+
+- **用户诉求**：首页商品卡片副文案、说明文字、订单列表元信息等仍偏细，要求把所有 300 改成 400。
+- **结论**：批量替换 `frontend/src` 下所有 `.vue`/`.css` 中 `font-weight: 300` → `400`（含 HomeView、OrderListView、ProductListView 等）；构建通过。
+- **涉及文件**：`frontend/src/**/*.vue`、`frontend/src/style.css`、`AGENT.md`。
+
+### 2026-06-01 11:50 — 浅色主题字体加粗提升可读性
+
+- **用户诉求**：发布页等字体看起来太细。
+- **结论**：全局 `body`/输入框/错误提示字重 300→400；表单标签改为 500 并加深颜色；正文字色略加深；发布页说明文字同步加粗；Inter 字体引入 500 字重。
+- **涉及文件**：`frontend/src/style.css`、`frontend/src/views/SellView.vue`、`AGENT.md`。
+
+### 2026-06-01 11:48 — 发布页下拉框箭头位置优化
+
+- **用户诉求**：发布商品页分类等下拉框箭头太靠右、观感奇怪。
+- **结论**：在 `style.css` 为 `select.ds-input` 隐藏系统默认箭头，改用自定义 SVG 箭头并设置 `background-position: right 14px center` 与右侧内边距；全站下拉框统一生效；构建通过。
+- **涉及文件**：`frontend/src/style.css`、`AGENT.md`。
+
+### 2026-06-01 11:43 — 修复首页轮播图按钮/文字可读性
+
+- **用户诉求**：轮播图的按钮和文字看着难受或看不到。
+- **结论**：`HeroCarousel` 内部将标题/副标题/标签与左右切换按钮、当前分页点改为固定白色（不再依赖 `--color-on-dark`），并将左右切换按钮从方形改为圆形“玻璃感”样式，适配浅色主题下的深色遮罩背景；构建通过。
+- **涉及文件**：`frontend/src/components/HeroCarousel.vue`、`AGENT.md`。
+- **未完成 / 风险**：若未来需要“浅遮罩 + 深字”风格，可再把轮播 copy 区改成独立白底信息卡。
+ - **补充**：左右箭头由字符 `‹/›` 替换为居中 SVG chevron，解决字体符号视觉不居中问题。
+
+### 2026-05-31 22:16 — 启动后端服务
+
+- **用户诉求**：启动后端服务。
+- **结论**：已在 `backend` 后台运行 `uvicorn app.main:app --reload --host 127.0.0.1 --port 8000`；`/health` 返回 ok。前端 dev 已在 5173 运行。
+- **涉及文件**：`AGENT.md`。
+- **建议下一步**：浏览器刷新 http://localhost:5173/ ；API 文档 http://127.0.0.1:8000/docs 。
+
+### 2026-05-28 15:00 — 商城切换浅色/白色背景
+
+- **用户诉求**：老师说颜色太暗，商城换成白色背景。
+- **结论**：更新 `frontend/src/style.css` 全局设计令牌为浅色主题（白底、深字、浅灰边框/卡片）；同步调整登录/注册页 `AuthPageShell` 背景与表单样式；构建通过。
+- **涉及文件**：`frontend/src/style.css`、`frontend/src/components/AuthPageShell.vue`、`AGENT.md`。
+- **未完成 / 风险**：轮播图/Hero 等区域仍保留图片上的深色遮罩以保证文字可读；若需进一步“更白更亮”可再微调卡片阴影与 AI 抽屉样式。
+
+### 2026-05-28 14:46 — 补充后端架构说明文档
+
+- **用户诉求**：把后端架构和理解写到 `docs` 里，便于阅读项目。
+- **结论**：新增 `docs/后端架构说明.md`，解释后端目录结构与分层（router/repository/service/schema/model）、以及一次请求的典型链路，并给出代码阅读判断口诀。
+- **涉及文件**：`docs/后端架构说明.md`、`AGENT.md`。
+- **未完成 / 风险**：无。
+- **建议下一步**：按模块补“示例走读”小节（例如以退款通过/下单为例，逐行串起 router→repo→service→schema）。
+
 ### 2026-05-28 14:08 — 猜你喜欢展示商品图片
 
 - **用户诉求**：猜你喜欢部分需要能够看到商品图片。

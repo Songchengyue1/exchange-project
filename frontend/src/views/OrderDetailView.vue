@@ -314,7 +314,7 @@ async function cancel() {
   margin: 0 0 var(--space-lg);
   font-size: 14px;
   color: var(--color-body);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .specs {
@@ -330,7 +330,7 @@ async function cancel() {
   padding: var(--space-sm) 0;
   border-bottom: 1px solid var(--color-hairline);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 

@@ -165,7 +165,7 @@ async function cancel() {
 .lede {
   margin: 0 0 var(--space-xl);
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
@@ -194,7 +194,7 @@ async function cancel() {
 .card__m {
   margin: 0 0 var(--space-sm);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--color-body);
 }
 
