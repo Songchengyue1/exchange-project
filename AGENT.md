@@ -78,7 +78,7 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 - **结论**：`HeroCarousel` 内部将标题/副标题/标签与左右切换按钮、当前分页点改为固定白色（不再依赖 `--color-on-dark`），并将左右切换按钮从方形改为圆形“玻璃感”样式，适配浅色主题下的深色遮罩背景；构建通过。
 - **涉及文件**：`frontend/src/components/HeroCarousel.vue`、`AGENT.md`。
 - **未完成 / 风险**：若未来需要“浅遮罩 + 深字”风格，可再把轮播 copy 区改成独立白底信息卡。
- - **补充**：左右箭头由字符 `‹/›` 替换为居中 SVG chevron，解决字体符号视觉不居中问题。
+- **补充**：左右箭头由字符 `‹/›` 替换为居中 SVG chevron，解决字体符号视觉不居中问题。
 
 ### 2026-05-31 22:16 — 启动后端服务
 

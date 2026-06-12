@@ -6,7 +6,6 @@ import { showConfirm } from '../composables/useConfirm'
 import { APP_ICON, APP_NAME } from '../constants/app'
 import { useAuthStore } from '../stores/auth'
 
-const health = ref('检查中…')
 const navOpen = ref(false)
 const auth = useAuthStore()
 const route = useRoute()
@@ -27,13 +26,6 @@ async function onLogout() {
 }
 
 onMounted(async () => {
-  try {
-    const res = await fetch('/health')
-    const data = await res.json()
-    health.value = data.status === 'ok' ? '后端在线' : JSON.stringify(data)
-  } catch {
-    health.value = '后端未启动'
-  }
   if (auth.token && !auth.user) {
     await auth.hydrate()
   }
@@ -98,7 +90,6 @@ watch(
         </nav>
 
         <div class="top-nav__actions">
-          <span class="health-pill ds-hover-pill" data-testid="health">{{ health }}</span>
           <template v-if="auth.isAuthenticated">
             <RouterLink to="/me" class="user-chip">
               <UserAvatar
@@ -294,20 +285,6 @@ watch(
   flex-shrink: 0;
 }
 
-.health-pill {
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-hairline);
-  color: var(--color-muted);
-  background: var(--color-surface-soft);
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .user-chip {
   display: inline-flex;
   align-items: center;
@@ -381,12 +358,6 @@ watch(
 
 .top-nav__links-stripe {
   display: none;
-}
-
-@media (max-width: 1023px) {
-  .health-pill {
-    display: none;
-  }
 }
 
 @media (max-width: 767px) {

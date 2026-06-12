@@ -183,7 +183,6 @@ onMounted(async () => {
   <section class="cta-band">
     <div class="cta-band__inner">
       <h2 class="cta-band__title">准备好连接买家与卖家</h2>
-      <a class="ds-btn cta-band__btn" href="/docs" target="_blank" rel="noopener noreferrer">后端 Swagger</a>
     </div>
   </section>
 </template>
@@ -412,21 +411,13 @@ onMounted(async () => {
 }
 
 .cta-band__title {
-  margin: 0 0 var(--space-xl);
+  margin: 0;
   font-family: var(--font-display);
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.5px;
   color: var(--color-on-dark);
-}
-
-.cta-band__btn {
-  margin: 0 auto;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @media (max-width: 900px) {
