@@ -3,6 +3,7 @@ import type {
   AIConversation,
   AIConversationDetail,
   AISearchResult,
+  AISearchByImageResult,
   AIRecommendResult,
   ChatStreamDone,
 } from '../types/ai'
@@ -20,6 +21,19 @@ export function aiSearch(query: string, page = 1, pageSize = 12) {
     auth: false,
     body: JSON.stringify({ query, page, page_size: pageSize }),
   })
+}
+
+export function aiSearchByImage(file: File, page = 1, pageSize = 12) {
+  const form = new FormData()
+  form.append('file', file)
+  return apiFetch<AISearchByImageResult>(
+    `/api/v1/ai/search-by-image?page=${page}&page_size=${pageSize}`,
+    {
+      method: 'POST',
+      auth: false,
+      body: form,
+    },
+  )
 }
 
 export function getRecommendations(limit = 8) {

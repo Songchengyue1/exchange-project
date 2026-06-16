@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { aiSearch } from '../api/ai'
+import { aiSearch, aiSearchByImage } from '../api/ai'
 import { listProducts } from '../api/products'
 import type { ProductListItem } from '../types/product'
 import type { AISearchMode } from '../types/ai'
@@ -18,6 +18,8 @@ const loading = ref(false)
 const error = ref('')
 const aiMode = ref<AISearchMode | null>(null)
 const searchInput = ref('')
+const imageInput = ref<HTMLInputElement | null>(null)
+const imageRecognized = ref<{ item: string | null; keywords: string[] } | null>(null)
 
 const categoryId = computed(() => {
   const raw = route.query.category
@@ -98,6 +100,43 @@ async function runAiSearch() {
   }
 }
 
+function triggerImagePick() {
+  imageInput.value?.click()
+}
+
+async function onImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // 允许连续选择同一文件
+  if (!file) return
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    error.value = '仅支持 JPG / PNG / WebP 图片'
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    error.value = '图片过大，请控制在 5MB 以内'
+    return
+  }
+
+  loading.value = true
+  error.value = ''
+  imageRecognized.value = null
+  try {
+    const res = await aiSearchByImage(file, 1, pageSize)
+    page.value = 1
+    items.value = res.items
+    total.value = res.total
+    aiMode.value = res.mode
+    imageRecognized.value = { item: res.recognized_item, keywords: res.keywords }
+    searchInput.value = res.query
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '识图搜索失败'
+  } finally {
+    loading.value = false
+  }
+}
+
 watch(
   () => q.value,
   (v) => {
@@ -124,6 +163,16 @@ watch(
         @keydown.enter="route.query.ai === '1' ? runAiSearch() : setQuery({ q: searchInput, page: 1 })"
       />
       <button type="button" class="ds-btn toolbar__ai" @click="runAiSearch">智能搜索</button>
+      <button type="button" class="ds-btn toolbar__img" :disabled="loading" @click="triggerImagePick">
+        拍照/上传识图
+      </button>
+      <input
+        ref="imageInput"
+        class="visually-hidden"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        @change="onImageSelected"
+      />
       <select class="ds-input toolbar__sort" :value="sort" @change="setQuery({ sort: ($event.target as HTMLSelectElement).value, page: 1 })">
         <option value="created_at_desc">最新上架</option>
         <option value="price_asc">价格从低到高</option>
@@ -131,6 +180,12 @@ watch(
       </select>
     </div>
 
+    <p v-if="imageRecognized" class="img-result">
+      AI 识别为：<strong>{{ imageRecognized.item || '未能识别' }}</strong>
+      <span v-if="imageRecognized.keywords.length" class="img-result__kw">
+        （关键词：{{ imageRecognized.keywords.join('、') }}）
+      </span>
+    </p>
     <p v-if="aiMode" class="ai-badge ds-label-caps">检索模式：{{ aiMode }}</p>
     <p v-if="error" class="ds-form-error">{{ error }}</p>
     <p v-if="loading" class="muted">加载中…</p>
@@ -219,8 +274,42 @@ watch(
   flex-shrink: 0;
 }
 
+.toolbar__img {
+  height: 48px;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .toolbar__sort {
   width: 200px;
+}
+
+.img-result {
+  margin: 0 0 var(--space-md);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-body);
+}
+
+.img-result strong {
+  color: var(--color-on-dark);
+  font-weight: 700;
+}
+
+.img-result__kw {
+  color: var(--color-muted);
 }
 
 .ai-badge {

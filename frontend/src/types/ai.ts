@@ -12,6 +12,12 @@ export interface AISearchResult {
   fallback: boolean
 }
 
+export interface AISearchByImageResult extends AISearchResult {
+  recognized_item: string | null
+  keywords: string[]
+  query: string
+}
+
 export interface AIRecommendResult {
   items: ProductListItem[]
   mode: 'history_vector' | 'popular' | 'empty'
