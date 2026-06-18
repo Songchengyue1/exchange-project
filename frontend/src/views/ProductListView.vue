@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { aiSearch, aiSearchByImage } from '../api/ai'
 import { listProducts } from '../api/products'
@@ -20,6 +20,8 @@ const aiMode = ref<AISearchMode | null>(null)
 const searchInput = ref('')
 const imageInput = ref<HTMLInputElement | null>(null)
 const imageRecognized = ref<{ item: string | null; keywords: string[] } | null>(null)
+const imagePreview = ref<string | null>(null)
+const imageSearching = ref(false)
 
 const categoryId = computed(() => {
   const raw = route.query.category
@@ -119,7 +121,11 @@ async function onImageSelected(event: Event) {
     return
   }
 
+  if (imagePreview.value) URL.revokeObjectURL(imagePreview.value)
+  imagePreview.value = URL.createObjectURL(file)
+
   loading.value = true
+  imageSearching.value = true
   error.value = ''
   imageRecognized.value = null
   try {
@@ -134,6 +140,7 @@ async function onImageSelected(event: Event) {
     error.value = e instanceof Error ? e.message : '识图搜索失败'
   } finally {
     loading.value = false
+    imageSearching.value = false
   }
 }
 
@@ -144,6 +151,10 @@ watch(
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {
+  if (imagePreview.value) URL.revokeObjectURL(imagePreview.value)
+})
 </script>
 
 <template>
@@ -180,12 +191,30 @@ watch(
       </select>
     </div>
 
-    <p v-if="imageRecognized" class="img-result">
-      AI 识别为：<strong>{{ imageRecognized.item || '未能识别' }}</strong>
-      <span v-if="imageRecognized.keywords.length" class="img-result__kw">
-        （关键词：{{ imageRecognized.keywords.join('、') }}）
-      </span>
-    </p>
+    <div v-if="imagePreview" class="img-panel">
+      <div class="img-panel__media" :class="{ 'is-scanning': imageSearching }">
+        <img :src="imagePreview" alt="待识别图片" />
+        <div v-if="imageSearching" class="scan" aria-hidden="true">
+          <span class="scan__line" />
+          <span class="scan__grid" />
+        </div>
+      </div>
+      <div class="img-panel__info">
+        <p v-if="imageSearching" class="img-panel__status">
+          <span class="dots"><i /><i /><i /></span>
+          正在识别图片内容…
+        </p>
+        <template v-else-if="imageRecognized">
+          <p class="img-result">
+            AI 识别为：<strong>{{ imageRecognized.item || '未能识别' }}</strong>
+          </p>
+          <p v-if="imageRecognized.keywords.length" class="img-result__kw">
+            关键词：{{ imageRecognized.keywords.join('、') }}
+          </p>
+        </template>
+      </div>
+    </div>
+
     <p v-if="aiMode" class="ai-badge ds-label-caps">检索模式：{{ aiMode }}</p>
     <p v-if="error" class="ds-form-error">{{ error }}</p>
     <p v-if="loading" class="muted">加载中…</p>
@@ -296,8 +325,129 @@ watch(
   width: 200px;
 }
 
+.img-panel {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: center;
+  margin: 0 0 var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-card);
+}
+
+.img-panel__media {
+  position: relative;
+  flex-shrink: 0;
+  width: 140px;
+  height: 140px;
+  overflow: hidden;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-hairline);
+}
+
+.img-panel__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.img-panel__media.is-scanning img {
+  filter: grayscale(0.3) brightness(0.85);
+}
+
+/* 扫描动效 */
+.scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scan__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.scan__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: linear-gradient(
+    to bottom,
+    rgba(120, 200, 255, 0) 0%,
+    rgba(120, 200, 255, 0.45) 50%,
+    rgba(120, 200, 255, 0) 100%
+  );
+  box-shadow: 0 0 12px rgba(120, 200, 255, 0.6);
+  animation: scan-move 1.6s ease-in-out infinite;
+}
+
+@keyframes scan-move {
+  0% {
+    transform: translateY(-28px);
+  }
+  100% {
+    transform: translateY(140px);
+  }
+}
+
+.img-panel__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.img-panel__status {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-body);
+}
+
+/* 加载中跳动的点 */
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-on-dark);
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+.dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
 .img-result {
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-xs);
   font-size: 14px;
   font-weight: 400;
   color: var(--color-body);
@@ -309,7 +459,16 @@ watch(
 }
 
 .img-result__kw {
+  margin: 0;
+  font-size: 13px;
   color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan__line,
+  .dots i {
+    animation: none;
+  }
 }
 
 .ai-badge {

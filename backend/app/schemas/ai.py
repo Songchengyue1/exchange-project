@@ -28,6 +28,14 @@ class AISearchOut(BaseModel):
     fallback: bool = False
 
 
+class AISearchByImageOut(AISearchOut):
+    """识图搜索结果：在普通搜索结果上附带识别信息。"""
+
+    recognized_item: Optional[str] = None
+    keywords: list[str] = Field(default_factory=list)
+    query: str = ""
+
+
 class AIRecommendOut(BaseModel):
     items: list[ProductListItem]
     mode: Literal["history_vector", "popular", "empty"]

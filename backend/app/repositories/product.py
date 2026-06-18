@@ -50,12 +50,25 @@ class ProductRepository:
         page_size: int,
         category_id: Optional[int] = None,
         q: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
         sort: str = "created_at_desc",
     ) -> tuple[list[Product], int]:
         filters = [Product.status == "approved"]
         if category_id is not None:
             filters.append(Product.category_id == category_id)
-        if q and q.strip():
+        # keywords：任一词命中标题/描述即算匹配（OR）；用于识图/智能搜索的多关键词场景
+        if keywords:
+            ors = []
+            for kw in keywords:
+                kw = kw.strip()
+                if not kw:
+                    continue
+                term = f"%{kw}%"
+                ors.append(Product.title.ilike(term))
+                ors.append(Product.description.ilike(term))
+            if ors:
+                filters.append(or_(*ors))
+        elif q and q.strip():
             term = f"%{q.strip()}%"
             filters.append(or_(Product.title.ilike(term), Product.description.ilike(term)))
 

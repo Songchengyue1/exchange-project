@@ -30,6 +30,7 @@ class AISearchService:
         *,
         page: int = 1,
         page_size: int = 12,
+        keywords: Optional[list[str]] = None,
     ) -> AISearchOut:
         hot = SettingsRepository(self.db).hot_rating_threshold()
         q = query.strip()
@@ -52,11 +53,13 @@ class AISearchService:
             if qvec:
                 vector_ids = [pid for pid, _ in self.embeddings.similarity_search(qvec, top_k=50)]
 
+        # 识图等多关键词场景：按「任一词命中」检索；否则沿用整串模糊匹配
         kw_rows, kw_total = self.products.list_marketplace(
             page=1,
             page_size=100,
             category_id=category_id,
-            q=keyword_q,
+            q=keyword_q if not keywords else None,
+            keywords=keywords,
             sort=sort,
         )
 
@@ -73,14 +76,18 @@ class AISearchService:
 
         merged_ids: list[int] = []
         seen: set[int] = set()
-        for pid in vector_ids:
+        kw_ids = [p.id for p in kw_rows]
+        # 识图（传入 keywords）时，标题命中的关键词结果更可信，优先于向量噪声；
+        # 普通文字搜索维持原行为：向量在前
+        first, second = (kw_ids, vector_ids) if keywords else (vector_ids, kw_ids)
+        for pid in first:
             if pid not in seen:
                 seen.add(pid)
                 merged_ids.append(pid)
-        for p in kw_rows:
-            if p.id not in seen:
-                seen.add(p.id)
-                merged_ids.append(p.id)
+        for pid in second:
+            if pid not in seen:
+                seen.add(pid)
+                merged_ids.append(pid)
 
         if not merged_ids and not self.client.is_available():
             fallback = True

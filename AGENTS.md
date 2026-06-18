@@ -54,29 +54,81 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 ## 最新会话
 
+### 2026-06-16 — 识图搜索：图片预览 + 加载动效
+
+- **用户诉求**：拍照/上传识图时把待识别的图片显示出来，加载过程做成动效。
+- **结论**：在 `ProductListView.vue` 中用 `URL.createObjectURL` 生成本地预览（`onBeforeUnmount` 释放）；新增 `imageSearching` 专用状态。识别中在图片上叠加「扫描线 + 网格」CSS 动画，信息区显示跳动圆点「正在识别图片内容…」；完成后展示识别结果与关键词。已加 `prefers-reduced-motion` 降级。`npm run build` 通过。
+- **涉及文件**：`frontend/src/views/ProductListView.vue`。
+
+### 2026-06-16 — 恢复全部会话记录至 AGENTS.md
+
+- **用户诉求**：把 `docs/agent-archive.md` 中的历史记录合并回 `AGENTS.md`，不再做归档拆分。
+- **结论**：已将归档约 66 条会话接回「最新会话」末尾；规则去掉「超过 40 行迁至 agent-archive」；`docs/agent-archive.md` 改为停用说明。
+- **涉及文件**：`AGENTS.md`、`.cursor/rules/agent-context-to-agent-md.mdc`、`CLAUDE.md`、`docs/agent-archive.md`。
+
+### 2026-06-16 — AGENTS.md 归档说明与落盘例外
+
+- **用户诉求**：为何 `AGENTS.md` 变短；以后「启动前后端」类会话不要写入。
+- **结论**：2026-06-12 按规则将约 70 条旧会话迁至 `docs/agent-archive.md`；`AGENTS.md` 只保留近期若干轮 + 顶部固定测试账号区块。已在 `.cursor/rules/agent-context-to-agent-md.mdc` 与 `CLAUDE.md` 增加例外：纯启动/停止服务且无代码变更时不落盘；删除本轮误写的启动记录。
+- **涉及文件**：`.cursor/rules/agent-context-to-agent-md.mdc`、`CLAUDE.md`、`AGENTS.md`。
+
+### 2026-06-13 — 修复识图搜索「识别到但搜不到」问题
+
+- **用户诉求**:识图把整串关键词丢进搜索框,与英文标题对不上,搜不到对应商品。
+- **根因**:关键词检索是整串 `ILIKE %...%`,把多个词当一个长串匹配,谁都对不上;命中全靠向量,而模型输出中文、标题是英文(Nike/iPhone),向量也不稳,小库还混入噪声。
+- **结论**:三处改动——(1) `list_marketplace` 新增 `keywords` 参数,按「任一词命中标题或描述」OR 匹配(普通文字搜索行为不变);(2) `AISearchService.search` 新增 `keywords` 入参,传入时关键词结果排在向量结果之前(识图场景标题命中更可信);(3) `VisionSearchService` 强化 prompt(务必给英文品牌名+最短品类词)并加 `_expand_keywords`(运动鞋/高帮鞋→补「鞋」字宽词,匹配描述里的「鞋底」)。
+- **涉及文件**:`backend/app/repositories/product.py`、`backend/app/services/ai/search_service.py`、`backend/app/services/ai/vision_search_service.py`、`AGENTS.md`。
+- **验证**:实时接口测 4 张 demo 图均把正确商品排到首位——Nike 球鞋、iPhone、宜家书桌、Switch 卡带;模式多为 hybrid。后端 `from app.main import app` 通过;已重启后端(无 --reload,pid 见 8000 端口)。
+- **未完成 / 风险**:`_expand_keywords` 目前只内置鞋类窄→宽回退,其他品类(如「连帽衫→卫衣」)未覆盖,后续可按需补;小库下向量仍会在正确结果后追加少量不相关商品(噪声在后,不影响首位)。
+
+### 2026-06-13 — 实现 AI 识图搜商品功能
+
+- **用户诉求**:实现「上传图片 → AI 识别物品 → 检索商品」功能。
+- **结论**:打通图片→关键词→复用现有混合搜索的管线。后端 `OllamaClient` 新增 `vision_describe()`(调 `/api/chat` 带 `images` base64)与同步 `_client()` 助手(顺带修复 `llm_parse.py` 早先引用 `client._client` 的潜在 bug);新增 `VisionSearchService`,让视觉模型输出 `{item, keywords}` JSON,拼成查询后调 `AISearchService.search()`;新增 `POST /api/v1/ai/search-by-image`(multipart `file`,公开,校验类型 jpg/png/webp 与 ≤5MB)。前端 `ProductListView` 增加「拍照/上传识图」按钮 + 隐藏 file input + 「AI 识别为:…」结果横幅。已 `ollama pull qwen2.5vl:3b`。
+- **关键决策**:视觉模型选 `qwen2.5vl:3b`(本地、中文 OK、约 3GB);新增配置 `ollama_vision_model`、`ai_vision_timeout_seconds=60`、`ai_vision_max_image_bytes=5MB`。
+- **涉及文件**:`backend/app/services/ai/ollama_client.py`、`backend/app/services/ai/vision_search_service.py`(新建)、`backend/app/config.py`、`backend/app/schemas/ai.py`、`backend/app/routers/ai.py`、`frontend/src/api/ai.ts`、`frontend/src/types/ai.ts`、`frontend/src/views/ProductListView.vue`、`AGENTS.md`。
+- **验证**:`npm run build` 通过;后端 `from app.main import app` 通过;直接调用 `VisionSearchService` 识别 demo_p3_nike.png → 「白色耐克运动鞋」并命中 Nike 商品。
+- **未完成 / 风险**:用户本地 `--reload` 的 uvicorn(pid 75984)未自动加载新路由,`/openapi.json` 仍无该接口——**需手动重启后端** 才能在浏览器实测;小商品库下 vector 模式会混入不相关商品(既有搜索行为,非本次引入)。
+- **建议下一步**:1) 重启后端后在前端实测识图搜索;2) 视识别质量调整 `_VISION_PROMPT`;3) 如需更准可考虑后续做以图搜图(CLIP 图片向量)。
+
+### 2026-06-13 — 将 AGENT.md 重命名为 AGENTS.md
+
+- **用户诉求**:落盘文件名当时写错,应为 `AGENTS.md`;同步改掉其他引用处。
+- **结论**:用 `git mv` 把 `AGENT.md` 重命名为 `AGENTS.md`;批量替换 `CLAUDE.md`、`.cursor/rules/agent-context-to-agent-md.mdc`、`docs/agent-archive.md` 及本文件内的全部 `AGENT.md` 引用;全仓库已无残留。`.cursor` 规则文件名(`agent-context-to-agent-md.mdc`)未改,已向用户说明为可选项。
+- **涉及文件**:`AGENTS.md`(由 `AGENT.md` 改名)、`CLAUDE.md`、`.cursor/rules/agent-context-to-agent-md.mdc`、`docs/agent-archive.md`。
+- **建议下一步**:如需彻底统一命名,可将 `.cursor/rules/agent-context-to-agent-md.mdc` 改名为 `...agents-md.mdc`。
+
+### 2026-06-12 11:20 — 同步 Cursor 规则与 Skill 到 Claude Code
+
+- **用户诉求**:把 `.cursor` 下的 rules 和 skills 同步给 Claude Code(此前 `.claude/` 为空)。
+- **结论**:新建根目录 `CLAUDE.md` 承载两条规则(会话上下文落盘、代码变更后自检),内容与 `.cursor/rules/*.mdc` 保持同步;`seed-product` skill 原样复制到 `.claude/skills/seed-product/`(SKILL.md 格式两边通用);按规则将 2026-05-31 及更早的约 70 条旧会话记录归档至 `docs/agent-archive.md`。
+- **涉及文件**:`CLAUDE.md`(新建)、`.claude/skills/seed-product/SKILL.md`、`.claude/skills/seed-product/product-fields.md`、`docs/agent-archive.md`(新建)、`AGENTS.md`。
+- **未完成 / 风险**:上一轮讨论的「AI 识图搜商品」功能尚未实现;已定方案:Ollama 拉取多模态模型(如 `qwen2.5vl:3b`)→ 识别图片得到关键词 → 复用 `AISearchService.search()`,新增 `POST /ai/search-by-image`。
+- **建议下一步**:1) 后端 `OllamaClient` 增加带 `images` 的识别方法并新增识图搜索接口;2) 前端搜索框增加图片上传入口;3) 后续修改规则时,`CLAUDE.md` 与 `.cursor/rules` 两侧同步更新。
+
 ### 2026-06-01 11:52 — 全站 font-weight 300 统一改为 400
 
 - **用户诉求**：首页商品卡片副文案、说明文字、订单列表元信息等仍偏细，要求把所有 300 改成 400。
 - **结论**：批量替换 `frontend/src` 下所有 `.vue`/`.css` 中 `font-weight: 300` → `400`（含 HomeView、OrderListView、ProductListView 等）；构建通过。
-- **涉及文件**：`frontend/src/**/*.vue`、`frontend/src/style.css`、`AGENT.md`。
+- **涉及文件**：`frontend/src/**/*.vue`、`frontend/src/style.css`、`AGENTS.md`。
 
 ### 2026-06-01 11:50 — 浅色主题字体加粗提升可读性
 
 - **用户诉求**：发布页等字体看起来太细。
 - **结论**：全局 `body`/输入框/错误提示字重 300→400；表单标签改为 500 并加深颜色；正文字色略加深；发布页说明文字同步加粗；Inter 字体引入 500 字重。
-- **涉及文件**：`frontend/src/style.css`、`frontend/src/views/SellView.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/style.css`、`frontend/src/views/SellView.vue`、`AGENTS.md`。
 
 ### 2026-06-01 11:48 — 发布页下拉框箭头位置优化
 
 - **用户诉求**：发布商品页分类等下拉框箭头太靠右、观感奇怪。
 - **结论**：在 `style.css` 为 `select.ds-input` 隐藏系统默认箭头，改用自定义 SVG 箭头并设置 `background-position: right 14px center` 与右侧内边距；全站下拉框统一生效；构建通过。
-- **涉及文件**：`frontend/src/style.css`、`AGENT.md`。
+- **涉及文件**：`frontend/src/style.css`、`AGENTS.md`。
 
 ### 2026-06-01 11:43 — 修复首页轮播图按钮/文字可读性
 
 - **用户诉求**：轮播图的按钮和文字看着难受或看不到。
 - **结论**：`HeroCarousel` 内部将标题/副标题/标签与左右切换按钮、当前分页点改为固定白色（不再依赖 `--color-on-dark`），并将左右切换按钮从方形改为圆形“玻璃感”样式，适配浅色主题下的深色遮罩背景；构建通过。
-- **涉及文件**：`frontend/src/components/HeroCarousel.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/components/HeroCarousel.vue`、`AGENTS.md`。
 - **未完成 / 风险**：若未来需要“浅遮罩 + 深字”风格，可再把轮播 copy 区改成独立白底信息卡。
 - **补充**：左右箭头由字符 `‹/›` 替换为居中 SVG chevron，解决字体符号视觉不居中问题。
 
@@ -84,21 +136,21 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 - **用户诉求**：启动后端服务。
 - **结论**：已在 `backend` 后台运行 `uvicorn app.main:app --reload --host 127.0.0.1 --port 8000`；`/health` 返回 ok。前端 dev 已在 5173 运行。
-- **涉及文件**：`AGENT.md`。
+- **涉及文件**：`AGENTS.md`。
 - **建议下一步**：浏览器刷新 http://localhost:5173/ ；API 文档 http://127.0.0.1:8000/docs 。
 
 ### 2026-05-28 15:00 — 商城切换浅色/白色背景
 
 - **用户诉求**：老师说颜色太暗，商城换成白色背景。
 - **结论**：更新 `frontend/src/style.css` 全局设计令牌为浅色主题（白底、深字、浅灰边框/卡片）；同步调整登录/注册页 `AuthPageShell` 背景与表单样式；构建通过。
-- **涉及文件**：`frontend/src/style.css`、`frontend/src/components/AuthPageShell.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/style.css`、`frontend/src/components/AuthPageShell.vue`、`AGENTS.md`。
 - **未完成 / 风险**：轮播图/Hero 等区域仍保留图片上的深色遮罩以保证文字可读；若需进一步“更白更亮”可再微调卡片阴影与 AI 抽屉样式。
 
 ### 2026-05-28 14:46 — 补充后端架构说明文档
 
 - **用户诉求**：把后端架构和理解写到 `docs` 里，便于阅读项目。
 - **结论**：新增 `docs/后端架构说明.md`，解释后端目录结构与分层（router/repository/service/schema/model）、以及一次请求的典型链路，并给出代码阅读判断口诀。
-- **涉及文件**：`docs/后端架构说明.md`、`AGENT.md`。
+- **涉及文件**：`docs/后端架构说明.md`、`AGENTS.md`。
 - **未完成 / 风险**：无。
 - **建议下一步**：按模块补“示例走读”小节（例如以退款通过/下单为例，逐行串起 router→repo→service→schema）。
 
@@ -106,14 +158,14 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 - **用户诉求**：猜你喜欢部分需要能够看到商品图片。
 - **结论**：补齐商品详情页“猜你喜欢”列表的封面图展示（有 `cover_image` 显示图片，否则显示占位）；构建通过。
-- **涉及文件**：`frontend/src/views/ProductDetailView.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/views/ProductDetailView.vue`、`AGENTS.md`。
 - **未完成 / 风险**：无。
 
 ### 2026-05-28 14:05 — 管理后台订单详情入口与管理员信息展示
 
 - **用户诉求**：订单监管部分加入查看订单详情功能；管理后台需要能够看到当前管理员的信息。
 - **结论**：`AdminOrdersView` 增加“查看订单”入口，复用前台 `订单详情` 页面（后端已允许 admin 查看任意订单）；`AdminLayout` 头部展示当前管理员昵称/用户名/角色，并在进入管理后台时自动拉取当前用户信息。
-- **涉及文件**：`frontend/src/views/AdminOrdersView.vue`、`frontend/src/layouts/AdminLayout.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/views/AdminOrdersView.vue`、`frontend/src/layouts/AdminLayout.vue`、`AGENTS.md`。
 - **未完成 / 风险**：无。
 - **建议下一步**：如需在管理后台“原地弹窗”查看详情，可新增 `/api/v1/admin/orders/{id}` + Admin 专用详情弹窗组件（避免跳转到前台路由）。
 
@@ -121,7 +173,7 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 - **用户诉求**：暂时注释掉/去掉代码雨功能。
 - **结论**：移除 `AuthPageShell.vue` 对 `CodeRainCanvas` 的引用与渲染，改为静态渐变背景兜底；构建通过。
-- **涉及文件**：`frontend/src/components/AuthPageShell.vue`、`AGENT.md`。
+- **涉及文件**：`frontend/src/components/AuthPageShell.vue`、`AGENTS.md`。
 - **未完成 / 风险**：`CodeRainCanvas.vue` 文件仍保留但不再使用；后续如需恢复可重新挂载。
 - **建议下一步**：若希望“全站”彻底禁用代码雨（含未来其他入口），可再加一个全局 feature flag（例如环境变量控制）。
 
@@ -163,7 +215,7 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 ### 2026-05-21 — 补交易闭环与收藏功能
 
-- **用户诉求**：完善卖家履约、商品编辑重审、退款驳回原因、收藏功能，并同步 `AGENT.md` 与 TODO 文档。
+- **用户诉求**：完善卖家履约、商品编辑重审、退款驳回原因、收藏功能，并同步 `AGENTS.md` 与 TODO 文档。
 - **结论**：新增迁移 `h8i9j0k1l2m3`；订单支付后为「待卖家履约」，卖家确认发货/交付后进入「待买家确认」，买家再确认收货；退款驳回原因会回显给买家/管理员；商品编辑或补图会重新进入待审核；新增商品收藏/取消收藏、收藏数量、`/favorites` 我的收藏页。
 - **涉及文件**：后端 `orders.py`、`products.py`、`admin.py`、`ProductFavorite` 模型与迁移；前端 `Order*View.vue`、`ProductDetailView.vue`、`MyFavoritesView.vue`、路由/API/types；`docs/实现待办-TODO.md`。
 - **验证**：`npm run build` 通过；`PYTHONPYCACHEPREFIX=/private/tmp/codex_pycache backend/.venv/bin/python -m compileall backend/app -q` 通过；`alembic heads` 为 `h8i9j0k1l2m3`。
@@ -382,13 +434,11 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 - **涉及文件**：`backend/app/models/review.py`、`feedback.py`、`routers/*`、`alembic/versions/d4e5f6a7b8c9_*`；`frontend/src/components/ReviewModal.vue`、`views/Feedback*.vue`、`AdminFeedbackView.vue`；`docs/实现待办-TODO.md`。
 - **测试**：买家 `demo_buyer` 完成订单后可评价；`admin` 处理 `/admin/feedback`。
 
-### 2026-05-16 — AGENT.md 收录测试账号
+### 2026-05-16 — AGENTS.md 收录测试账号
 
-- **用户诉求**：把当前测试账号写入 AGENT.md。
+- **用户诉求**：把当前测试账号写入 AGENTS.md。
 - **结论**：在文首新增「测试账号（本地演示）」固定区块（账号表、入口、演示数据、库连接、种子命令）。
-- **涉及文件**：`AGENT.md`。
-
-### 2026-05-16 — 通用二次确认弹窗组件
+- **涉及文件**：`AGENTS.md`。
 
 ### 2026-05-16 — 通用二次确认弹窗组件
 
@@ -509,8 +559,8 @@ run_seed_data(include_demo_admin=True, include_demo_products=True, include_demo_
 
 ### 2026-05-14 — Cursor 规则与实现待办
 
-- **用户诉求**：新增两条项目规则——(1) 每轮回答后将上下文写入 `AGENT.md`；(2) 每次写完或改完代码后检查完整性与准确性；另需一份模块与界面的 todolist。
-- **结论**：已在 `.cursor/rules/` 创建 `agent-context-to-agent-md.mdc`（`alwaysApply: true`）与 `post-code-change-verification.mdc`（匹配 `**/*.{py,vue,ts,tsx,js}`）；初始化 `AGENT.md`；新增 `docs/实现待办-TODO.md`（M0～M7 后端+界面清单与推荐顺序）；`README.md` 增加上述文档链接。
-- **涉及文件**：`.cursor/rules/agent-context-to-agent-md.mdc`、`.cursor/rules/post-code-change-verification.mdc`、`AGENT.md`、`docs/实现待办-TODO.md`、`README.md`
+- **用户诉求**：新增两条项目规则——(1) 每轮回答后将上下文写入 `AGENTS.md`；(2) 每次写完或改完代码后检查完整性与准确性；另需一份模块与界面的 todolist。
+- **结论**：已在 `.cursor/rules/` 创建 `agent-context-to-agent-md.mdc`（`alwaysApply: true`）与 `post-code-change-verification.mdc`（匹配 `**/*.{py,vue,ts,tsx,js}`）；初始化 `AGENTS.md`；新增 `docs/实现待办-TODO.md`（M0～M7 后端+界面清单与推荐顺序）；`README.md` 增加上述文档链接。
+- **涉及文件**：`.cursor/rules/agent-context-to-agent-md.mdc`、`.cursor/rules/post-code-change-verification.mdc`、`AGENTS.md`、`docs/实现待办-TODO.md`、`README.md`
 - **未完成 / 风险**：`globs` 中大括号扩展是否被 Cursor 全版本支持未实测；若规则未触发，可改为多条 `globs` 或缩小为 `backend/**/*.py` + `frontend/**/*.{vue,ts}`。
 - **下一步**：在 Cursor 设置中确认项目规则已启用；按 `docs/实现待办-TODO.md` 从 M0/M1 开始实现。

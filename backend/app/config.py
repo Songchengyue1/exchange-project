@@ -29,9 +29,13 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_chat_model: str = "qwen3.5:0.8b"
     ollama_embed_model: str = "mxbai-embed-large"
+    ollama_vision_model: str = "qwen2.5vl:3b"
     ai_search_use_llm: bool = False
     ai_request_timeout_seconds: float = 30.0
     ai_search_timeout_seconds: float = 2.0
+    ai_vision_timeout_seconds: float = 60.0
+    # 识图上传：单张图片最大字节数（默认 5MB）
+    ai_vision_max_image_bytes: int = 5 * 1024 * 1024
     ai_embed_batch_on_startup: bool = False
     # 对话加速：小库优先关键词；限制生成长度与历史轮数
     ai_chat_keyword_first: bool = True

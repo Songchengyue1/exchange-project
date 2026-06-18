@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import AsyncIterator, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ from app.schemas.ai import (
     AIConversationOut,
     AIMessageOut,
     AIProductRef,
+    AISearchByImageOut,
     AISearchIn,
     AISearchOut,
     AIRecommendOut,
@@ -27,8 +28,12 @@ from app.schemas.ai import (
 )
 from app.services.ai.chat_service import AIChatService
 from app.services.ai.embedding_index import EmbeddingIndexService
+from app.services.ai.ollama_client import OllamaError
 from app.services.ai.recommend_service import AIRecommendService
 from app.services.ai.search_service import AISearchService
+from app.services.ai.vision_search_service import VisionSearchService
+
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -104,6 +109,35 @@ def ai_search(body: AISearchIn, db: Session = Depends(get_db)) -> AISearchOut:
     if body.page < 1 or body.page_size < 1 or body.page_size > 50:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="分页参数无效")
     return AISearchService(db).search(body.query, page=body.page, page_size=body.page_size)
+
+
+@router.post("/search-by-image", response_model=AISearchByImageOut)
+async def ai_search_by_image(
+    file: UploadFile = File(...),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> AISearchByImageOut:
+    if not settings.ai_enabled:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI 功能已关闭")
+    if file.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="仅支持 JPG / PNG / WebP 图片",
+        )
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="图片内容为空")
+    if len(data) > settings.ai_vision_max_image_bytes:
+        limit_mb = settings.ai_vision_max_image_bytes // (1024 * 1024)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"图片过大，请控制在 {limit_mb}MB 以内",
+        )
+    try:
+        return VisionSearchService(db).search_by_image(data, page=page, page_size=page_size)
+    except OllamaError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
 
 @router.post("/embeddings/reindex")

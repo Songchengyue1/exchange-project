@@ -46,6 +46,47 @@ class OllamaClient:
             _ollama_available_cache = False
         return _ollama_available_cache
 
+    def _client(self, *, timeout: Optional[float] = None) -> httpx.Client:
+        """同步 httpx 客户端（调用方负责 with 上下文关闭）。"""
+        return httpx.Client(base_url=self.base_url, timeout=timeout or self.timeout)
+
+    def vision_describe(
+        self,
+        image_b64: str,
+        prompt: str,
+        *,
+        model: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> str:
+        """用多模态模型识别图片，返回模型生成的文本。
+
+        image_b64 为不含 data URI 前缀的纯 base64 字符串。
+        """
+        model = model or settings.ollama_vision_model
+        payload: dict = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt, "images": [image_b64]},
+            ],
+            "stream": False,
+            "keep_alive": settings.ollama_keep_alive,
+            "options": {"temperature": 0.1, "num_predict": 256},
+        }
+        if "qwen3" in model.lower():
+            payload["think"] = False
+        t = timeout or settings.ai_vision_timeout_seconds
+        try:
+            with self._client(timeout=t) as client:
+                r = client.post("/api/chat", json=payload)
+                r.raise_for_status()
+                data = r.json()
+        except httpx.HTTPError as exc:
+            global _ollama_available_cache
+            _ollama_available_cache = None
+            raise OllamaError(f"Ollama 图片识别失败: {exc}") from exc
+        content = (data.get("message") or {}).get("content") or ""
+        return content.strip()
+
     def embed(self, text: str, *, model: Optional[str] = None, timeout: Optional[float] = None) -> list[float]:
         model = model or settings.ollama_embed_model
         payload = {"model": model, "input": text}
